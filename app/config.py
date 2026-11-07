@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # LLM Settings
     llm_provider: str = "gemini"
     llm_api_key: str = ""
-    llm_model: str = "gemini-2.5-flash"
+    llm_model: str = "gemini-3.5-flash"
 
     # GitHub Integration
     github_token: Optional[str] = None
