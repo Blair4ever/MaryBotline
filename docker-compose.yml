@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: aura-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aura_user
+      POSTGRES_PASSWORD: aura_password
+      POSTGRES_DB: aura_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aura_user -d aura_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  aura-api:
+    build: .
+    container_name: aura-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: production
+      DEBUG: "False"
+      DATABASE_URL: postgresql+asyncpg://aura_user:aura_password@db:5432/aura_db
+      TIMEZONE: Asia/Bangkok
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:
+
