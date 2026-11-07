@@ -41,3 +41,4 @@ class EventParticipant(Base, GroupScopedMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(32), default="attending", nullable=False)  # attending, maybe, declined
 
     event: Mapped["Event"] = relationship("Event", back_populates="participants")
+

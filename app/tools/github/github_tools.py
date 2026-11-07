@@ -105,3 +105,4 @@ async def draft_github_issue(
         },
         "summary": f"เตรียมแบบร่าง GitHub Issue: '{title}' เรียบร้อยแล้วค่ะ (พร้อมส่งตรวจทาน)",
     }
+

@@ -35,3 +35,4 @@ async def test_event_and_rsvp_lifecycle(db_session):
     assert list_res["success"] is True
     assert list_res["count"] == 1
     assert list_res["events"][0]["title"] == "ทริปเขาใหญ่ 2 วัน 1 คืน"
+

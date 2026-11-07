@@ -35,3 +35,4 @@ async def test_draft_github_issue_security_leak_rejection():
     )
     assert res["success"] is False
     assert "ความเสี่ยง" in res["error"]
+

@@ -210,3 +210,4 @@ async def list_group_events(
         return await _execute(session)
     async with AsyncSessionLocal() as db:
         return await _execute(db)
+

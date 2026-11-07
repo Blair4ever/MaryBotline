@@ -71,6 +71,60 @@ class LineMessagingService:
                 logger.error(f"Failed to send LINE push: {exc}")
                 return False
 
+    async def reply_flex(self, reply_token: str, alt_text: str, flex_contents: Dict[str, Any]) -> bool:
+        """Send a Flex Message reply to a LINE event."""
+        if not self.access_token:
+            logger.warning(f"[DRY-RUN] LINE reply_flex to {reply_token}: {alt_text}")
+            return True
+
+        url = f"{self.LINE_API_BASE}/message/reply"
+        payload = {
+            "replyToken": reply_token,
+            "messages": [
+                {
+                    "type": "flex",
+                    "altText": alt_text,
+                    "contents": flex_contents,
+                }
+            ],
+        }
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            try:
+                response = await client.post(url, headers=self._headers, json=payload)
+                response.raise_for_status()
+                return True
+            except httpx.HTTPError as exc:
+                logger.error(f"Failed to send LINE reply_flex: {exc}")
+                return False
+
+    async def push_flex(self, to: str, alt_text: str, flex_contents: Dict[str, Any]) -> bool:
+        """Send a proactive Flex Message push to a user or group."""
+        if not self.access_token:
+            logger.warning(f"[DRY-RUN] LINE push_flex to {to}: {alt_text}")
+            return True
+
+        url = f"{self.LINE_API_BASE}/message/push"
+        payload = {
+            "to": to,
+            "messages": [
+                {
+                    "type": "flex",
+                    "altText": alt_text,
+                    "contents": flex_contents,
+                }
+            ],
+        }
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            try:
+                response = await client.post(url, headers=self._headers, json=payload)
+                response.raise_for_status()
+                return True
+            except httpx.HTTPError as exc:
+                logger.error(f"Failed to send LINE push_flex: {exc}")
+                return False
+
     async def get_profile(self, user_id: str, group_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Retrieve user profile (display name, picture URL) from group or 1-on-1."""
         if not self.access_token:
