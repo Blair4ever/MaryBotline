@@ -92,17 +92,34 @@ async def process_single_event(event_dict: dict) -> None:
             await db.commit()
             logger.info(f"Recorded incoming message {event.message.id} from {user_id} in {target_id}")
 
-            # Basic ping/status echo check
-            if event.message.text and event.replyToken:
+            # Process with Agent Orchestrator
+            if event.message.text:
                 cleaned_text = event.message.text.strip().lower()
                 line_client = LineMessagingService()
-                if cleaned_text == "ping":
+
+                if cleaned_text == "ping" and event.replyToken:
                     await line_client.reply_text(event.replyToken, "pong! MARY is alive.")
-                elif cleaned_text in ["mary status", "status"]:
+                elif cleaned_text in ["mary status", "status"] and event.replyToken:
                     await line_client.reply_text(
                         event.replyToken,
                         f"MARY Platform\nTarget: {target_id}\nStatus: Active"
                     )
+                else:
+                    # Pass message to AI Agent Orchestrator
+                    try:
+                        from app.agent.orchestrator import AgentOrchestrator
+                        orchestrator = AgentOrchestrator()
+                        is_group = event.source.type in ["group", "room"]
+                        await orchestrator.handle_message(
+                            group_id=target_id,
+                            sender_id=user_id,
+                            sender_name=display_name,
+                            text=event.message.text,
+                            reply_token=event.replyToken,
+                            is_group=is_group,
+                        )
+                    except Exception as err:
+                        logger.error(f"Agent Orchestrator failed for message {event.message.id}: {err}", exc_info=True)
 
 
 @router.post("/webhooks/line")

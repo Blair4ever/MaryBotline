@@ -56,6 +56,13 @@ async def setup_test_db():
 
 
 @pytest_asyncio.fixture(loop_scope="session")
+async def db_session():
+    """Yields a database session for test operations."""
+    async with session_module.AsyncSessionLocal() as session:
+        yield session
+
+
+@pytest_asyncio.fixture(loop_scope="session")
 async def async_client():
     """Provides an async test client for the FastAPI application."""
     transport = ASGITransport(app=app)

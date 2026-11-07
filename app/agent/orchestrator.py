@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.context import ContextManager
-from app.agent.permissions import PermissionEngine
-from app.agent.tools.base import tool_registry
+from app.permissions import PermissionEngine
+from app.tools import tool_registry
 from app.database.session import AsyncSessionLocal
 from app.models.audit import AgentAction
 from app.models.conversation import Message
