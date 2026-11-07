@@ -1,6 +1,6 @@
 import pytest
-from app.agent.autonomy import ActionPolicy
-from app.agent.permissions import PermissionEngine
+from app.permissions.policies import ActionPolicy
+from app.permissions.engine import PermissionEngine
 
 
 def test_permission_engine_automatic_actions():
