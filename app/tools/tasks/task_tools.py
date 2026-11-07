@@ -202,3 +202,4 @@ async def update_task_status(
         return await _execute(session)
     async with AsyncSessionLocal() as db:
         return await _execute(db)
+

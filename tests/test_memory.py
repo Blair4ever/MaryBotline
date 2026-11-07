@@ -65,3 +65,4 @@ async def test_memory_lifecycle_and_multi_tenant_isolation(db_session):
         session=db_session,
     )
     assert len(search_after_del) == 0
+

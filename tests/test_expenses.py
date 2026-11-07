@@ -59,3 +59,4 @@ async def test_record_and_summarize_group_expense(db_session):
     assert summary_res["unsettled_total"] == 1200.0
     assert len(summary_res["expenses"]) == 1
     assert summary_res["expenses"][0]["title"] == "มื้อเย็น ชาบู"
+

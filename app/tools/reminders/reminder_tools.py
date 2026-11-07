@@ -192,3 +192,4 @@ async def list_group_reminders(
         return await _execute(session)
     async with AsyncSessionLocal() as db:
         return await _execute(db)
+

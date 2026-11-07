@@ -71,3 +71,4 @@ async def test_task_lifecycle(db_session):
     )
     assert update_res["success"] is True
     assert update_res["new_status"] == "done"
+

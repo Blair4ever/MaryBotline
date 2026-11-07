@@ -71,3 +71,4 @@ async def test_agent_orchestrator_silent_on_untriggered_message():
         is_group=True,
     )
     assert reply is None
+
