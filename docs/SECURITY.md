@@ -1,4 +1,4 @@
-# AURA Security & Privacy Architecture
+# MARY Security & Privacy Architecture
 
 ## 1. Security Architecture Principles
 1. **Defense-in-Depth:** Multiple validation layers (cryptographic signature verification -> rate-limiting/idempotency -> tenant boundary enforcement -> typed tool argument validation -> human approval gate).

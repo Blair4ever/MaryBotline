@@ -18,13 +18,13 @@ logger = logging.getLogger(__name__)
 
 class AgentOrchestrator:
     """
-    Central orchestration engine for AURA.
+    Central orchestration engine for MARY.
     Coordinates context loading, LLM inference, permission validation, tool execution,
     and LINE response dispatch.
     """
 
     TRIGGER_KEYWORDS = [
-        "aura", "ออร่า", "น้องออร่า", "@aura",
+        "mary", "แมรี่", "น้องแมรี่", "@mary",
         "ช่วย", "สรุป", "หาร", "เคลียร์", "จ่าย",
         "เตือน", "จำ", "โน้ต", "บันทึก", "ลืม",
         "github", "ทริป", "เที่ยว",
@@ -36,7 +36,7 @@ class AgentOrchestrator:
 
     def should_respond(self, text: str, is_group: bool) -> bool:
         """
-        Determines whether AURA should proactively respond to this message.
+        Determines whether MARY should proactively respond to this message.
         - Direct chats (1-on-1): Always responds.
         - Group chats: Responds when explicitly called or trigger keywords match.
         """
@@ -174,14 +174,14 @@ class AgentOrchestrator:
             await db.commit()
 
     async def _record_outgoing_message(self, group_id: str, text: str) -> None:
-        """Stores AURA's outgoing message in history."""
+        """Stores MARY's outgoing message in history."""
         import uuid
         async with AsyncSessionLocal() as db:
             msg = Message(
                 id=str(uuid.uuid4()),
                 group_id=group_id,
-                sender_id="AURA_AGENT",
-                sender_name="AURA",
+                sender_id="MARY_AGENT",
+                sender_name="MARY",
                 message_type="text",
                 text=text,
                 direction="outgoing",

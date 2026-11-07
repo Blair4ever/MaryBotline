@@ -3,7 +3,7 @@ from enum import Enum
 
 class AutonomyLevel(str, Enum):
     """
-    Autonomy levels defined in the AURA architecture:
+    Autonomy levels defined in the MARY architecture:
     - L1 (Observe): Analyze incoming messages, extract context and factual group memory.
     - L2 (Assist): Propose solutions, prepare drafts, estimate expenses, ask clarifying questions.
     - L3 (Execute): Execute authorized actions using registered tools.

@@ -1,7 +1,7 @@
-# Script to start AURA in local development mode
+# Script to start MARY in local development mode
 $ErrorActionPreference = "Stop"
 
-Write-Host "Starting AURA Local Development Server..." -ForegroundColor Cyan
+Write-Host "Starting MARY Local Development Server..." -ForegroundColor Cyan
 
 if (-Not (Test-Path ".venv\Scripts\python.exe")) {
     Write-Host "Virtual environment not found. Please run: python -m venv .venv; .venv\Scripts\pip install -r requirements.txt" -ForegroundColor Red

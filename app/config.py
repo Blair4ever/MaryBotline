@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     )
 
     # General
-    app_name: str = "AURA"
+    app_name: str = "MARY"
     app_env: str = "development"
     debug: bool = True
     port: int = 8000
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     line_channel_access_token: str = ""
 
     # Database
-    database_url: str = "sqlite+aiosqlite:///./aura.db"
+    database_url: str = "sqlite+aiosqlite:///./mary.db"
 
     # LLM Settings
     llm_provider: str = "gemini"

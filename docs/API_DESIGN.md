@@ -1,4 +1,4 @@
-# AURA API Design & Webhook Specification
+# MARY API Design & Webhook Specification
 
 ## 1. HTTP Endpoints Overview
 
@@ -74,7 +74,7 @@
 ```json
 {
   "status": "healthy",
-  "app_name": "AURA",
+  "app_name": "MARY",
   "environment": "development",
   "timezone": "Asia/Bangkok",
   "timestamp_utc": "2026-11-07T12:54:00.123456+00:00",

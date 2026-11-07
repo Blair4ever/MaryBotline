@@ -53,7 +53,7 @@ class GeminiLLMClient(BaseLLMClient):
     ) -> LLMResponse:
         if not self.api_key:
             logger.warning("No LLM_API_KEY configured. Returning mock assistant response.")
-            return LLMResponse(content="[AURA Dev Mode: LLM_API_KEY not configured]")
+            return LLMResponse(content="[MARY Dev Mode: LLM_API_KEY not configured]")
 
         url = f"{self.base_url}/models/{self.model}:generateContent?key={self.api_key}"
 

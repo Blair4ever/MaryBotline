@@ -1,4 +1,4 @@
-# AURA Master Implementation Plan & Roadmap
+# MARY Master Implementation Plan & Roadmap
 
 ## 1. Phased Delivery Roadmap
 

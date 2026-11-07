@@ -1,4 +1,4 @@
-# AURA: Autonomous Group AI Agent
+# MARY: Autonomous Group AI Agent
 
 > **Autonomous Group AI Agent for LINE Messaging API**  
 > Empowering LINE groups with shared context, conversational intelligence, proactive coordination, expense splitting, scheduled reminders, and developer utilities.
@@ -7,7 +7,7 @@
 
 ## 🌟 Overview
 
-AURA is not a simple question-and-answer chatbot. It acts as an autonomous collaborative group member operating with three levels of autonomy:
+MARY is not a simple question-and-answer chatbot. It acts as an autonomous collaborative group member operating with three levels of autonomy:
 - **L1 (Observe):** Monitors incoming conversations, extracts context, and stores long-term factual group memory.
 - **L2 (Assist):** Proactively drafts suggestions, expense splits, travel itineraries, and asks clarifying questions.
 - **L3 (Execute):** Safely invokes registered tools and actions (e.g. reminders, repayments, GitHub management), enforcing multi-tenant isolation and strict permission gates.
@@ -65,7 +65,7 @@ Fill in your LINE Messaging API and LLM credentials:
 - `LINE_CHANNEL_SECRET`: Secret key from LINE Developers Console
 - `LINE_CHANNEL_ACCESS_TOKEN`: Long-lived channel access token
 - `LLM_API_KEY`: API key (Google Gemini, OpenAI, etc.)
-- `DATABASE_URL`: PostgreSQL connection string (defaults to SQLite fallback `sqlite+aiosqlite:///./aura.db`)
+- `DATABASE_URL`: PostgreSQL connection string (defaults to SQLite fallback `sqlite+aiosqlite:///./mary.db`)
 
 ### 4. Run Development Server
 ```bash

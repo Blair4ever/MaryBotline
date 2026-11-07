@@ -6,7 +6,7 @@ from app.database.base import Base, GroupScopedMixin, TimestampMixin
 
 
 class AgentAction(Base, GroupScopedMixin, TimestampMixin):
-    """Tracks every autonomous action proposed or executed by AURA."""
+    """Tracks every autonomous action proposed or executed by MARY."""
 
     __tablename__ = "agent_actions"
 

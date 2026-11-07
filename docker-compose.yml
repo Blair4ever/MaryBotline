@@ -3,25 +3,25 @@ version: '3.8'
 services:
   db:
     image: postgres:16-alpine
-    container_name: aura-postgres
+    container_name: mary-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: aura_user
-      POSTGRES_PASSWORD: aura_password
-      POSTGRES_DB: aura_db
+      POSTGRES_USER: mary_user
+      POSTGRES_PASSWORD: mary_password
+      POSTGRES_DB: mary_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aura_user -d aura_db"]
+      test: ["CMD-SHELL", "pg_isready -U mary_user -d mary_db"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  aura-api:
+  mary-api:
     build: .
-    container_name: aura-api
+    container_name: mary-api
     restart: unless-stopped
     depends_on:
       db:
@@ -31,7 +31,7 @@ services:
     environment:
       APP_ENV: production
       DEBUG: "False"
-      DATABASE_URL: postgresql+asyncpg://aura_user:aura_password@db:5432/aura_db
+      DATABASE_URL: postgresql+asyncpg://mary_user:mary_password@db:5432/mary_db
       TIMEZONE: Asia/Bangkok
     env_file:
       - .env

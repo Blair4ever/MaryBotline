@@ -1,4 +1,4 @@
-# AURA Database Schema & Entity Relationship Specification
+# MARY Database Schema & Entity Relationship Specification
 
 ## 1. Architectural Guidelines
 - **Multi-Tenant Boundary:** Every group-owned entity inherits `group_id` foreign key referencing `groups(id)`. Direct cross-group joins or un-scoped queries are prohibited.

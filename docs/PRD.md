@@ -1,7 +1,7 @@
-# AURA Product Requirements Document (PRD)
+# MARY Product Requirements Document (PRD)
 
 ## 1. Executive Summary
-**AURA (Autonomous Group AI Agent)** is an autonomous group productivity platform integrated with the LINE Messaging API. Unlike single-user conversational bots, AURA acts as an intelligent, context-aware group member for collaborative teams and social circles. It observes conversations, retains episodic and factual group memory, coordinates schedules and tasks, manages split expenses, plans events, and interfaces with external developer workflows (GitHub) under strict multi-tenant security boundaries and human-in-the-loop approval gates.
+**MARY (Autonomous Group AI Agent)** is an autonomous group productivity platform integrated with the LINE Messaging API. Unlike single-user conversational bots, MARY acts as an intelligent, context-aware group member for collaborative teams and social circles. It observes conversations, retains episodic and factual group memory, coordinates schedules and tasks, manages split expenses, plans events, and interfaces with external developer workflows (GitHub) under strict multi-tenant security boundaries and human-in-the-loop approval gates.
 
 ---
 
@@ -47,9 +47,9 @@ LINE groups are ubiquitous across Southeast Asia (particularly Thailand and Japa
 - **FR-2.2 Member Directory:** The system MUST track members within each group, recording LINE user IDs, display names, and roles.
 
 ### FR-3: Conversational Intelligence & Autonomy
-- **FR-3.1 Quiet Observation (L1):** In group chats, AURA MUST NOT respond to casual chit-chat unless addressed, mentioned, or identifying high-confidence utility (decisions, expenses, reminders).
-- **FR-3.2 Proactive Assistance (L2):** When a decision or plan is identified, AURA MAY offer structured drafts, summaries, or clarifying questions.
-- **FR-3.3 Safe Tool Execution (L3):** When performing actions, AURA MUST execute registered tools, verify output parameters, and format user responses based on verified results.
+- **FR-3.1 Quiet Observation (L1):** In group chats, MARY MUST NOT respond to casual chit-chat unless addressed, mentioned, or identifying high-confidence utility (decisions, expenses, reminders).
+- **FR-3.2 Proactive Assistance (L2):** When a decision or plan is identified, MARY MAY offer structured drafts, summaries, or clarifying questions.
+- **FR-3.3 Safe Tool Execution (L3):** When performing actions, MARY MUST execute registered tools, verify output parameters, and format user responses based on verified results.
 
 ### FR-4: Group Memory
 - **FR-4.1 Categories:** Factual, Event/Decision, User Preference, Project, Short-term context.

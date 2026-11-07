@@ -4,7 +4,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-TEST_DB_PATH = Path("./test_aura.db").resolve()
+TEST_DB_PATH = Path("./test_mary.db").resolve()
 TEST_DB_URL = f"sqlite+aiosqlite:///{TEST_DB_PATH.as_posix()}"
 
 os.environ["APP_ENV"] = "testing"

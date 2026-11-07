@@ -91,15 +91,15 @@ async def process_single_event(event_dict: dict) -> None:
 
             # Phase 1 verification: If bot is in test mode or replied, handle ping/pong
             if event.message.text and event.replyToken:
-                cleaned_text = event.message.text.strip()
-                if cleaned_text.lower() == "ping":
+                cleaned_text = event.message.text.strip().lower()
+                if cleaned_text == "ping":
                     line_client = LineMessagingService()
-                    await line_client.reply_text(event.replyToken, "pong! AURA is alive.")
-                elif cleaned_text.lower() == "aura status":
+                    await line_client.reply_text(event.replyToken, "pong! MARY is alive.")
+                elif cleaned_text in ["mary status", "status"]:
                     line_client = LineMessagingService()
                     await line_client.reply_text(
                         event.replyToken,
-                        f"AURA MVP (Phase 1: Foundation)\nTarget ID: {target_id}\nStatus: Active"
+                        f"MARY Platform\nTarget ID: {target_id}\nStatus: Active"
                     )
 
 

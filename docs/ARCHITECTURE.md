@@ -1,7 +1,7 @@
-# AURA System Architecture & Design
+# MARY System Architecture & Design
 
 ## 1. Architectural Principles
-AURA is designed following six foundational principles:
+MARY is designed following six foundational principles:
 1. **Hexagonal / Clean Architecture:** Clear boundaries between external interfaces (LINE Webhook, HTTP API), core business logic (agent orchestrator, permission engine), and infrastructure (PostgreSQL, LLM client, APScheduler).
 2. **Deterministic Agent Safety:** The LLM is a reasoning and parsing engine, never an unconstrained execution environment. Every state change is mediated by validated Pydantic models, typed tool functions, and deterministic permission checks.
 3. **Strict Multi-Tenant Scoping:** All operations, memory lookups, and data writes are strictly scoped to `group_id`.

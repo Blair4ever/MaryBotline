@@ -43,7 +43,7 @@ async def test_webhook_accepts_valid_signature(async_client: AsyncClient):
                 "message": {
                     "id": "325708",
                     "type": "text",
-                    "text": "Hello AURA",
+                    "text": "Hello MARY",
                 },
             }
         ],

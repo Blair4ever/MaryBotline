@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent.prompts import AURA_SYSTEM_PROMPT
+from app.agent.prompts import MARY_SYSTEM_PROMPT
 from app.database.session import AsyncSessionLocal
 from app.models.conversation import Message
 from app.models.group import Member
@@ -56,7 +56,7 @@ class ContextManager:
 
             # 3. Assemble full system prompt
             complete_system_prompt = (
-                f"{AURA_SYSTEM_PROMPT}\n"
+                f"{MARY_SYSTEM_PROMPT}\n"
                 f"### Group Information:\n"
                 f"- Group ID: {group_id}\n"
                 f"{members_text}"

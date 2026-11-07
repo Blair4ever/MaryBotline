@@ -97,11 +97,11 @@ async def process_single_event(event_dict: dict) -> None:
                 cleaned_text = event.message.text.strip().lower()
                 line_client = LineMessagingService()
                 if cleaned_text == "ping":
-                    await line_client.reply_text(event.replyToken, "pong! AURA is alive.")
-                elif cleaned_text == "aura status":
+                    await line_client.reply_text(event.replyToken, "pong! MARY is alive.")
+                elif cleaned_text in ["mary status", "status"]:
                     await line_client.reply_text(
                         event.replyToken,
-                        f"AURA Platform\nTarget: {target_id}\nStatus: Active"
+                        f"MARY Platform\nTarget: {target_id}\nStatus: Active"
                     )
 
 
