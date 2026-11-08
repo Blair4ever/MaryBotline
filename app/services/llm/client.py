@@ -3,24 +3,32 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 import httpx
-from pydantic import BaseModel
 
 from app.config import get_settings
+from app.services.llm.exceptions import (
+    AuthenticationError,
+    ConfigurationError,
+    EndpointConnectionError,
+    LLMError,
+    ProviderAPIError,
+    UnsupportedCapabilityError,
+)
+from app.services.llm.openai_client import OpenAICompatibleClient
+from app.services.llm.registry import ModelRegistry, get_model_registry
+from app.services.llm.router import ModelRouter
+from app.services.llm.types import (
+    AvailabilityStatus,
+    CapabilityStatus,
+    DeploymentType,
+    LLMResponse,
+    ModelCapabilityProfile,
+    ModelPricing,
+    TokenUsage,
+    ToolCall,
+    WorkloadType,
+)
 
 logger = logging.getLogger(__name__)
-
-
-class ToolCall(BaseModel):
-    id: str
-    name: str
-    arguments: Dict[str, Any]
-
-
-class LLMResponse(BaseModel):
-    content: Optional[str] = None
-    tool_calls: List[ToolCall] = []
-    finish_reason: Optional[str] = None
-    raw_response: Optional[Dict[str, Any]] = None
 
 
 class BaseLLMClient(abc.ABC):
@@ -32,17 +40,18 @@ class BaseLLMClient(abc.ABC):
         messages: List[Dict[str, Any]],
         tools: Optional[List[Dict[str, Any]]] = None,
         system_instruction: Optional[str] = None,
+        **kwargs: Any,
     ) -> LLMResponse:
         pass
 
 
 class GeminiLLMClient(BaseLLMClient):
-    """Client for Google Gemini Models (e.g. Gemini 2.5 Flash)."""
+    """Client for Google Gemini Models (e.g. Gemini 2.5 Flash, Gemini 3.5 Flash)."""
 
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         settings = get_settings()
         self.api_key = api_key or settings.llm_api_key
-        self.model = model or settings.llm_model or "gemini-2.5-flash"
+        self.model = model or settings.llm_model or "gemini-3.5-flash"
         self.base_url = "https://generativelanguage.googleapis.com/v1beta"
 
     async def chat_completion(
@@ -50,6 +59,7 @@ class GeminiLLMClient(BaseLLMClient):
         messages: List[Dict[str, Any]],
         tools: Optional[List[Dict[str, Any]]] = None,
         system_instruction: Optional[str] = None,
+        **kwargs: Any,
     ) -> LLMResponse:
         if not self.api_key:
             logger.warning("No LLM_API_KEY configured. Returning mock assistant response.")
@@ -111,20 +121,58 @@ class GeminiLLMClient(BaseLLMClient):
                         )
                     )
 
+        # Gemini token counts
+        token_usage = None
+        usage_meta = data.get("usageMetadata")
+        if usage_meta:
+            token_usage = TokenUsage(
+                prompt_tokens=usage_meta.get("promptTokenCount", 0),
+                completion_tokens=usage_meta.get("candidatesTokenCount", 0),
+                total_tokens=usage_meta.get("totalTokenCount", 0),
+            )
+
         return LLMResponse(
             content=response_text if response_text else None,
             tool_calls=tool_calls,
+            usage=token_usage,
+            model=self.model,
+            provider="google",
             raw_response=data,
         )
 
 
-def get_llm_client() -> BaseLLMClient:
-    """Factory to retrieve configured LLM client."""
+def get_llm_client(workload: WorkloadType = WorkloadType.GENERAL_CONVERSATION) -> BaseLLMClient:
+    """
+    Factory to retrieve configured LLM client based on workload and availability.
+    Enforces capability validation: models lacking required capabilities (e.g. tool execution)
+    will automatically route to a capable model.
+    """
     settings = get_settings()
-    provider = settings.llm_provider.lower()
 
-    if provider in ["gemini", "google"]:
-        return GeminiLLMClient()
+    # If custom LLM is enabled
+    if settings.custom_llm_enabled:
+        router = ModelRouter()
+        requires_tools = (workload == WorkloadType.TOOL_EXECUTION)
+        selected_model, profile = router.select_model_for_operation(
+            workload=workload,
+            requires_tools=requires_tools,
+        )
+
+        # If routed to custom model
+        if selected_model == settings.custom_llm_model:
+            return OpenAICompatibleClient(
+                base_url=settings.custom_llm_base_url,
+                api_key=settings.custom_llm_api_key,
+                model=settings.custom_llm_model,
+                provider_name=settings.custom_llm_provider_name or "custom_llm",
+                capability_profile=profile,
+            )
+        # Otherwise routed to fallback model
+        return GeminiLLMClient(model=selected_model)
+
+    provider = settings.llm_provider.lower()
+    if provider in ["custom", "openai_compatible"]:
+        return OpenAICompatibleClient()
+
     # Default fallback to Gemini
     return GeminiLLMClient()
-

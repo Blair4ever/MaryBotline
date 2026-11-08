@@ -38,6 +38,13 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model: str = "gemini-3.5-flash"
 
+    # Custom / OpenAI-Compatible LLM Settings
+    custom_llm_base_url: Optional[str] = None
+    custom_llm_api_key: Optional[str] = None
+    custom_llm_model: Optional[str] = None
+    custom_llm_provider_name: Optional[str] = None
+    custom_llm_enabled: bool = False
+
     # GitHub Integration
     github_token: Optional[str] = None
 
