@@ -28,3 +28,4 @@ The MARY team takes security seriously. If you discover a security vulnerability
 ## Core Security Controls
 
 For comprehensive details on MARY's threat model, HMAC-SHA256 signature verification, idempotency tracking, and multi-tenant isolation, refer to [docs/SECURITY.md](docs/SECURITY.md).
+

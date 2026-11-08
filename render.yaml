@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: mary-botline
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: APP_NAME
+        value: MARY
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: TIMEZONE
+        value: Asia/Bangkok
+      - key: SECRET_KEY
+        generateValue: true
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: gemini-3.5-flash
+      - key: LLM_PROVIDER
+        value: gemini

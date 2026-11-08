@@ -106,3 +106,4 @@ All 50 unit tests pass deterministically in under 3 seconds using `pytest` and m
 1. **Speculative Decoding Across Tiers:** Using the local 9B Qwen model to draft speculative candidate tokens and having Gemini or a hosted validator verify them for ultra-low-latency complex reasoning.
 2. **Context-Window Eviction Policies:** Implementing semantic summary compaction when group history approaches the 32k context boundary of local GGUF models.
 3. **Structured Flex Message Streaming:** Investigating chunked streaming over LINE push channels to render real-time typewriter UI effects for lengthy group summaries.
+

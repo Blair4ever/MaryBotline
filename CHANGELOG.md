@@ -41,3 +41,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **LINE Messaging API Integration:** Webhook receiver endpoint at `/api/webhooks/line` with HMAC-SHA256 signature verification and idempotency check.
 - **Domain Tools:** Initial expense splitting, task tracking, and reminder scheduling using APScheduler.
 - **Relational Storage:** PostgreSQL and SQLite asynchronous schema with multi-tenant `group_id` scoping.
+

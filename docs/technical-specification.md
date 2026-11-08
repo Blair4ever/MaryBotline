@@ -224,3 +224,4 @@ CREATE TABLE reminders (
 | `gemini-3.5-flash` | Google Gemini | **SUPPORTED** | **SUPPORTED** | **SUPPORTED** | 1,048,576 | Cloud SaaS API |
 | `gemini-2.5-flash` | Google Gemini | **SUPPORTED** | **SUPPORTED** | **SUPPORTED** | 1,048,576 | Cloud SaaS API |
 | `Qwen3.5-9B-The-Defiant-Fable-...-IQ3_M.gguf` | Custom OpenAI | **UNSUPPORTED** | **UNKNOWN** | **SUPPORTED** | 32,768 | Local / Self-Hosted GGUF |
+
