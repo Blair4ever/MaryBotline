@@ -30,15 +30,26 @@ def test_agent_orchestrator_should_respond_rules():
     # Direct 1-on-1 chat always triggers response
     assert orchestrator.should_respond("สวัสดี", is_group=False) is True
 
-    # Group chat: casual greeting should be SILENT (L1 Observe)
+    # Group chat: casual conversation & non-mary messages should be SILENT (Passive Listening)
     assert orchestrator.should_respond("สวัสดีตอนเช้าครับทุกคน", is_group=True) is False
     assert orchestrator.should_respond("โอเค บ๊ายบาย", is_group=True) is False
+    assert orchestrator.should_respond("วันนี้กินข้าว 850 บาท หาร 4 คน", is_group=True) is False
+    assert orchestrator.should_respond("ช่วยเตือนความจำตอนบ่ายสอง", is_group=True) is False
 
-    # Group chat: trigger keywords should ACTIVATE
-    assert orchestrator.should_respond("น้องแมรี่ ช่วยหน่อย", is_group=True) is True
-    assert orchestrator.should_respond("วันนี้กินข้าว 850 บาท หาร 4 คน", is_group=True) is True
-    assert orchestrator.should_respond("ช่วยเตือนความจำตอนบ่ายสอง", is_group=True) is True
-    assert orchestrator.should_respond("@mary สรุปเมื่อวานให้หน่อย", is_group=True) is True
+    # Group chat: Begins with MARY or Mary or แมรี่ -> ACTIVATE
+    assert orchestrator.should_respond("MARY ช่วยหน่อย", is_group=True) is True
+    assert orchestrator.should_respond("Mary สรุปเมื่อวานให้หน่อย", is_group=True) is True
+    assert orchestrator.should_respond("แมรี่ ช่วยจัดทริปหน่อย", is_group=True) is True
+
+    # Group chat: Mention metadata -> ACTIVATE
+    assert orchestrator.should_respond("ขอถามหน่อย", is_group=True, is_mentioned=True) is True
+
+    # Group chat: Configured command -> ACTIVATE
+    assert orchestrator.should_respond("/help", is_group=True) is True
+    assert orchestrator.should_respond("/tasks", is_group=True) is True
+    assert orchestrator.should_respond("/summary", is_group=True) is True
+    assert orchestrator.should_respond("ping", is_group=True) is True
+    assert orchestrator.should_respond("status", is_group=True) is True
 
 
 @pytest.mark.asyncio

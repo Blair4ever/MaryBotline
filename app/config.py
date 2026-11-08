@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     # LINE Messaging API
     line_channel_secret: str = ""
     line_channel_access_token: str = ""
+    line_bot_user_id: Optional[str] = None
 
     # Database
     database_url: str = "sqlite+aiosqlite:///./mary.db"

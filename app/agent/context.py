@@ -19,26 +19,28 @@ class ContextManager:
         group_id: str,
         current_user_id: Optional[str] = None,
         session: Optional[AsyncSession] = None,
+        memory_enabled: bool = True,
     ) -> List[Dict[str, Any]]:
         """
         Assemble system prompt and recent message history with injected group memories.
         """
         async def _execute(db: AsyncSession) -> List[Dict[str, Any]]:
-            # 1. Fetch active group memories
-            mem_stmt = (
-                select(Memory)
-                .where(Memory.group_id == group_id, Memory.is_active == True)  # noqa: E712
-                .order_by(Memory.created_at.desc())
-                .limit(10)
-            )
-            mem_result = await db.execute(mem_stmt)
-            memories = mem_result.scalars().all()
-
+            # 1. Fetch active group memories (if memory_enabled is True)
             memories_text = ""
-            if memories:
-                memories_text = "\n### Current Group Shared Memory:\n"
-                for m in memories:
-                    memories_text += f"- [{m.category.upper()}] ({m.key}): {m.content} (id: {m.id})\n"
+            if memory_enabled:
+                mem_stmt = (
+                    select(Memory)
+                    .where(Memory.group_id == group_id, Memory.is_active == True)  # noqa: E712
+                    .order_by(Memory.created_at.desc())
+                    .limit(10)
+                )
+                mem_result = await db.execute(mem_stmt)
+                memories = mem_result.scalars().all()
+
+                if memories:
+                    memories_text = "\n### Current Group Shared Memory:\n"
+                    for m in memories:
+                        memories_text += f"- [{m.category.upper()}] ({m.key}): {m.content} (id: {m.id})\n"
 
             # 2. Fetch known group members
             member_stmt = (

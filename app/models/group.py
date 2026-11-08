@@ -3,6 +3,7 @@ from typing import List, Optional
 from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.base import Base, TimestampMixin
+from app.schemas.group_settings import GroupSettings, parse_group_settings, dump_group_settings
 
 
 class Group(Base, TimestampMixin):
@@ -15,6 +16,15 @@ class Group(Base, TimestampMixin):
     picture_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     settings_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    @property
+    def settings(self) -> GroupSettings:
+        """Returns parsed GroupSettings with defaults."""
+        return parse_group_settings(self.settings_json)
+
+    def set_settings(self, new_settings: GroupSettings) -> None:
+        """Sets settings_json from GroupSettings."""
+        self.settings_json = dump_group_settings(new_settings)
 
     # Relationships
     members: Mapped[List["Member"]] = relationship("Member", back_populates="group", cascade="all, delete-orphan")

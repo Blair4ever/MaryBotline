@@ -7,14 +7,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_settings
 from app.core.scheduler import get_scheduler
 from app.database.session import AsyncSessionLocal
+from app.models.group import Group
 from app.models.reminder import Reminder
+from app.schemas.group_settings import parse_group_settings
 from app.services.line.client import LineMessagingService
 from app.tools.base import tool_registry
 
 logger = logging.getLogger(__name__)
 
 
-async def execute_scheduled_reminder(reminder_id: str) -> None:
+async def execute_scheduled_reminder(reminder_id: str) -> bool:
     """Callback executed by APScheduler when a reminder triggers."""
     async with AsyncSessionLocal() as db:
         stmt = select(Reminder).where(Reminder.id == reminder_id, Reminder.status == "pending")
@@ -23,7 +25,23 @@ async def execute_scheduled_reminder(reminder_id: str) -> None:
 
         if not reminder:
             logger.info(f"Reminder {reminder_id} not found or already executed.")
-            return
+            return False
+
+        # Verify group allows proactive notifications
+        group_stmt = select(Group).where(Group.id == reminder.group_id)
+        group_res = await db.execute(group_stmt)
+        group = group_res.scalar_one_or_none()
+        group_settings = parse_group_settings(group.settings_json if group else None)
+
+        if not group_settings.proactive_notifications:
+            logger.info(
+                f"Proactive notifications disabled for group {reminder.group_id}. "
+                f"Suppressing reminder {reminder_id}."
+            )
+            reminder.status = "suppressed"
+            reminder.executed_at = datetime.now(timezone.utc)
+            await db.commit()
+            return False
 
         # Send push notification to the LINE group
         line_client = LineMessagingService()
@@ -42,6 +60,8 @@ async def execute_scheduled_reminder(reminder_id: str) -> None:
             reminder.executed_at = datetime.now(timezone.utc)
             await db.commit()
             logger.info(f"Executed reminder {reminder_id} in group {reminder.group_id}")
+            return True
+        return False
 
 
 @tool_registry.register(

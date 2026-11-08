@@ -25,29 +25,54 @@ class AgentOrchestrator:
 
     TRIGGER_KEYWORDS = [
         "mary", "แมรี่", "น้องแมรี่", "@mary",
-        "ช่วย", "สรุป", "หาร", "เคลียร์", "จ่าย",
-        "เตือน", "จำ", "โน้ต", "บันทึก", "ลืม",
-        "github", "ทริป", "เที่ยว",
     ]
 
     def __init__(self, llm_client: Optional[BaseLLMClient] = None, line_service: Optional[LineMessagingService] = None):
         self.llm = llm_client or get_llm_client()
         self.line = line_service or LineMessagingService()
 
-    def should_respond(self, text: str, is_group: bool) -> bool:
+    def should_respond(
+        self,
+        text: Optional[str],
+        is_group: bool,
+        is_mentioned: bool = False,
+        mention_required: bool = True,
+    ) -> bool:
         """
-        Determines whether MARY should proactively respond to this message.
+        Determines whether MARY should respond to this message.
         - Direct chats (1-on-1): Always responds.
-        - Group chats: Responds when explicitly called or trigger keywords match.
+        - Group chats:
+          - If is_mentioned is True: Responds (explicit LINE mention metadata).
+          - If message begins with "MARY" or "Mary" or "แมรี่": Responds.
+          - If message uses a command (/help, /summary, /tasks, ping, status): Responds.
+          - If mention_required is False: Falls back to trigger keywords.
+          - Otherwise: Does NOT respond (passive listening default).
         """
         if not is_group:
+            return True
+
+        if is_mentioned:
             return True
 
         if not text:
             return False
 
-        lower_text = text.lower()
-        return any(keyword in lower_text for keyword in self.TRIGGER_KEYWORDS)
+        stripped = text.strip()
+        lower_text = stripped.lower()
+
+        # Rule B.2: Message begins with "MARY" or "Mary" (case-insensitive) or "แมรี่"
+        if lower_text.startswith("mary") or stripped.startswith("แมรี่"):
+            return True
+
+        # Rule B.3: Configured commands (/help, /summary, /tasks, etc.)
+        if stripped.startswith("/") or lower_text in ["ping", "status"]:
+            return True
+
+        # If mention is not required by group configuration, fallback to trigger keywords
+        if not mention_required:
+            return any(keyword in lower_text for keyword in self.TRIGGER_KEYWORDS)
+
+        return False
 
     async def handle_message(
         self,
@@ -57,21 +82,38 @@ class AgentOrchestrator:
         text: str,
         reply_token: Optional[str] = None,
         is_group: bool = True,
+        is_mentioned: bool = False,
+        group_settings: Optional[Any] = None,
     ) -> Optional[str]:
         """
         Main entry point to process an incoming user message.
         """
-        if not self.should_respond(text, is_group):
-            logger.info(f"Message in group {group_id} does not trigger active response. Observing silently.")
+        mention_required = getattr(group_settings, "mention_required", True) if group_settings else True
+        memory_enabled = getattr(group_settings, "memory_enabled", True) if group_settings else True
+
+        if not self.should_respond(
+            text=text,
+            is_group=is_group,
+            is_mentioned=is_mentioned,
+            mention_required=mention_required,
+        ):
+            safe_id = group_id[:4] + "..." + group_id[-4:] if len(group_id) > 8 else "group"
+            logger.info(f"Group {safe_id}: Passive listening mode. Silently observing ordinary conversation.")
             return None
 
         # 1. Build context
-        messages = await ContextManager.build_context(group_id=group_id, current_user_id=sender_id)
+        messages = await ContextManager.build_context(
+            group_id=group_id,
+            current_user_id=sender_id,
+            memory_enabled=memory_enabled,
+        )
 
         # 2. Get registered tools
         tools_schema = tool_registry.get_openai_tools_schema()
 
         # 3. LLM reasoning
+        ai_provider = self.llm.__class__.__name__
+        logger.info(f"Invoking AI Orchestrator with provider: {ai_provider}")
         response = await self.llm.chat_completion(
             messages=messages,
             tools=tools_schema if tools_schema else None,
@@ -118,14 +160,18 @@ class AgentOrchestrator:
                     final_reply_text = second_response.content or "ดำเนินการเรียบร้อยแล้วค่ะ"
 
         # 5. Send reply via LINE
+        reply_sent = False
         if final_reply_text:
             if reply_token:
-                await self.line.reply_text(reply_token=reply_token, text=final_reply_text)
+                reply_sent = await self.line.reply_text(reply_token=reply_token, text=final_reply_text)
             else:
-                await self.line.push_text(to=group_id, text=final_reply_text)
+                reply_sent = await self.line.push_text(to=group_id, text=final_reply_text)
 
             # Record outgoing bot message in database
-            await self._record_outgoing_message(group_id, final_reply_text)
+            if memory_enabled:
+                await self._record_outgoing_message(group_id, final_reply_text)
+
+            logger.info(f"LINE reply dispatch result: success={reply_sent}")
 
         return final_reply_text
 
