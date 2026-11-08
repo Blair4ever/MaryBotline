@@ -18,14 +18,17 @@ def verify_line_signature(body: bytes, signature: str, channel_secret: str) -> b
     if not signature or not channel_secret:
         return False
 
+    clean_secret = channel_secret.strip().strip("'\"")
+    clean_signature = signature.strip().strip("'\"")
+
     try:
         hash_digest = hmac.new(
-            channel_secret.encode("utf-8"),
+            clean_secret.encode("utf-8"),
             body,
             hashlib.sha256,
         ).digest()
         expected_signature = base64.b64encode(hash_digest).decode("utf-8")
-        return hmac.compare_digest(expected_signature, signature)
+        return hmac.compare_digest(expected_signature, clean_signature)
     except Exception as exc:
         logger.error(f"Error during signature verification: {exc}")
         return False
