@@ -1,82 +1,84 @@
-# MARY System Architecture & Design
+# System Architecture & Technical Design
 
-## 1. Architectural Principles
-MARY is designed following six foundational principles:
-1. **Hexagonal / Clean Architecture:** Clear boundaries between external interfaces (LINE Webhook, HTTP API), core business logic (agent orchestrator, permission engine), and infrastructure (PostgreSQL, LLM client, APScheduler).
-2. **Deterministic Agent Safety:** The LLM is a reasoning and parsing engine, never an unconstrained execution environment. Every state change is mediated by validated Pydantic models, typed tool functions, and deterministic permission checks.
-3. **Strict Multi-Tenant Scoping:** All operations, memory lookups, and data writes are strictly scoped to `group_id`.
-4. **Asynchronous Non-Blocking I/O:** Built on Python's `asyncio`, FastAPI, and SQLAlchemy Async (`asyncpg`).
-5. **Configurable Model Agnosticism:** LLM providers (Gemini, OpenAI, Anthropic, LiteLLM) are behind an abstract interface.
-6. **Comprehensive Auditability:** All agent actions, tool invocations, and approvals are persistently logged.
+## 1. Architectural Philosophy & Principles
+
+MARY (Messaging AI Runtime) is structured according to six foundational engineering principles:
+
+1. **Hexagonal (Ports and Adapters) Architecture:** Strict boundaries isolate external transport interfaces (LINE Webhook, HTTP REST API) from core cognitive orchestration and persistent infrastructure (PostgreSQL/SQLite, LLM providers, job schedulers).
+2. **Deterministic Agent Safety:** Large Language Models are treated as non-deterministic parsing and reasoning components, never unchecked execution environments. All external side effects (database modifications, financial calculations, reminder scheduling) are mediated by typed Pydantic schemas and deterministic permission policies.
+3. **Multi-Tenant Tenant Isolation:** Every operation, entity model, context window, and persistent memory is strictly scoped by the unique LINE `group_id`.
+4. **Asynchronous Non-Blocking Pipeline:** Native Python `asyncio` handles inbound webhook requests, background orchestrator dispatching, and external model inference.
+5. **Dynamic Model Agnosticism & Runtime Selection:** LLM providers are decoupled from workload execution. Administrators can swap the active model runtime on a per-group basis without redeploying the application.
+6. **Zero-Duplicate Fallback Safety:** In the event of primary provider outage or failure, fallback routines preserve conversation context and prevent re-executing previously completed tool side effects.
 
 ---
 
-## 2. High-Level System Architecture
+## 2. End-to-End System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph External Clients
-        LINEUser[LINE Group Members] -->|Chat Messages & Events| LINEOA[LINE Messaging API Platform]
-    end
-
     subgraph Ingestion & Edge Security
-        LINEOA -->|POST /api/webhooks/line| WebhookController[FastAPI Webhook Controller]
-        WebhookController --> SigValidator[HMAC-SHA256 Signature Validator]
-        SigValidator -->|Invalid| Reject403[HTTP 403 Forbidden]
-        SigValidator -->|Valid| IdempotencyStore{Deduplication Check\nwebhookEventId}
-        IdempotencyStore -->|Duplicate| AckDup[HTTP 200 OK - No-op]
-        IdempotencyStore -->|New Event| Ack200[HTTP 200 OK Fast Ack]
+        LINEClient[LINE Platform] -->|POST Webhook| IngestRoute[FastAPI /api/webhooks/line]
+        IngestRoute --> SignatureAuth{HMAC-SHA256\nX-Line-Signature}
+        SignatureAuth -->|Invalid| Rejection[403 Forbidden]
+        SignatureAuth -->|Valid| Deduplicator{webhookEventId\nSeen Check}
+        Deduplicator -->|Duplicate| FastAck200[200 OK - No-op]
+        Deduplicator -->|New Event| FastAckAccepted[200 OK Accepted]
     end
 
-    subgraph Async Worker Pipeline
-        Ack200 -.->|Background Task| Dispatcher[Event Ingestion Worker]
-        Dispatcher --> MessageStore[(Store Incoming Message)]
-        Dispatcher --> MemberSync[Auto-Sync Group & Member Profile]
-        Dispatcher --> Orchestrator[Agent Orchestrator]
+    subgraph Async Processing Pipeline
+        FastAckAccepted -.->|Background Task| EventWorker[Async Event Ingestion Worker]
+        EventWorker --> SyncContext[Auto-Sync Group & Member Profiles]
+        EventWorker --> Orchestrator[Agent Orchestrator]
     end
 
-    subgraph Intelligence & Agent Core
-        Orchestrator --> TriggerGate{Should Respond?\n(Mention / Keyword / 1-on-1)}
-        TriggerGate -->|No| L1Observe[L1: Passive Context & Memory Extraction]
-        TriggerGate -->|Yes| ContextMgr[Context & Memory Retrieval]
+    subgraph Cognitive Layer & Model Routing
+        Orchestrator --> TriggerDecision{Should Respond?\nMention / Active Chat / Direct}
+        TriggerDecision -->|No| L1Listen[L1: Passive Context Extraction & Long-Term Memory]
+        TriggerDecision -->|Yes| PromptBuilder[Prompt & Context Assembler]
         
-        ContextMgr --> MemoryEngine[Memory Engine\n(Factual, Decisions, Preferences)]
-        ContextMgr --> HistoryEngine[Message History Window]
+        PromptBuilder --> LoadMemory[(Group Scoped Memory)]
+        PromptBuilder --> LoadHistory[(Recent 15-30 Message History)]
         
-        MemoryEngine --> PromptBuilder[Prompt & Tool Spec Assembler]
-        HistoryEngine --> PromptBuilder
+        PromptBuilder --> ModelRouter[ModelRouter]
+        ModelRouter --> Registry[Model Capability Registry]
         
-        PromptBuilder --> LLMClient[LLM Client Interface\n(Gemini 2.5 Flash / OpenAI / Claude)]
-        LLMClient --> ReasoningLoop{Agent Response Evaluation}
+        ModelRouter --> WorkloadClassification{Workload Type}
+        WorkloadClassification -->|Tool Execution| EnforceToolModel[Select Gemini\n(Tool Verified)]
+        WorkloadClassification -->|Conversation / Brainstorm| SelectGroupModel[Select Active Model\n(Qwen3.5 or Gemini)]
+        
+        SelectGroupModel --> PrimaryCall{Call Endpoint}
+        PrimaryCall -->|Success| ModelResponse[Standardized LLMResponse]
+        PrimaryCall -->|Offline / Auth Error| FallbackHandler[ModelRouter Fallback Routine]
+        FallbackHandler --> GeminiClient[Gemini Client Adapter]
+        GeminiClient --> ModelResponse
+        EnforceToolModel --> GeminiClient
     end
 
-    subgraph Safety & Tool Execution
-        ReasoningLoop -->|Direct Message| MsgFormatter[LINE Message Builder]
-        ReasoningLoop -->|Tool Call Request| PermEngine[Permission & Policy Engine]
+    subgraph Safety, Policy & Tool Execution
+        ModelResponse --> ToolDetector{Tool Call Requested?}
+        ToolDetector -->|No| MessageSynthesizer[Format Reply Text / Flex UI]
+        ToolDetector -->|Yes| PermissionPolicy{Permission Engine\nCheck Policy Level}
         
-        PermEngine -->|Requires Approval| ApprovalQueue[Pending Approvals Ledger]
-        PermEngine -->|Authorized| ToolRegistry[Typed Tool Registry]
+        PermissionPolicy -->|Automatic| ToolRunner[Typed Tool Registry]
+        PermissionPolicy -->|Require Approval| AdminApprovalQueue[Pending Approval Queue]
         
-        ToolRegistry --> ToolExpense[Expense & Split Manager]
-        ToolRegistry --> ToolReminder[Scheduler & Reminders]
-        ToolRegistry --> ToolTask[Task Tracker]
-        ToolRegistry --> ToolMemory[Memory Store/Correct/Delete]
-        ToolRegistry --> ToolTravel[Travel & Itinerary Planner]
-        ToolRegistry --> ToolGitHub[GitHub Integration Agent]
+        ToolRunner --> ExpenseTool[Expense & Split Manager]
+        ToolRunner --> ReminderTool[APScheduler Reminder Manager]
+        ToolRunner --> TaskTool[Task Tracking Manager]
+        ToolRunner --> GitHubTool[GitHub Integration Tool]
         
-        ToolExpense --> DB[(PostgreSQL Database)]
-        ToolReminder --> DB
-        ToolTask --> DB
-        ToolMemory --> DB
-        ToolReminder --> APSchedulerWorker[APScheduler Engine]
+        ExpenseTool --> AppDB[(PostgreSQL / SQLite)]
+        ReminderTool --> AppDB
+        TaskTool --> AppDB
+        
+        ToolRunner --> ToolResultFeedback[Feed Tool Output Back to LLM]
+        ToolResultFeedback --> MessageSynthesizer
     end
 
-    subgraph Verification & Outgoing Dispatch
-        ToolRegistry --> ResultVerifier{Verify Tool Execution}
-        ResultVerifier --> LLMFeedback[LLM Result Synthesizer]
-        LLMFeedback --> MsgFormatter
-        MsgFormatter --> LINEClient[LINE Messaging API Client]
-        LINEClient -->|Reply / Push Message| LINEOA
+    subgraph Outbound Dispatch
+        MessageSynthesizer --> LINEOutbound[LINE Messaging API Client]
+        LINEOutbound --> LINEPlatform[LINE Group Chat]
     end
 ```
 
@@ -84,44 +86,76 @@ flowchart TD
 
 ## 3. Subsystem Breakdown
 
-### 3.1 Backend Architecture
-- **Framework:** FastAPI with Uvicorn ASGI server.
-- **Lifespan Manager:** Handles asynchronous database connection pooling (`asyncpg`), table creation/migrations, and background scheduler startup/shutdown.
-- **API Routing:**
-  - `/api/webhooks/line`: High-throughput webhook ingestion endpoint.
-  - `/api/health`: Service readiness, liveness, and configuration diagnostics.
-  - `/api/admin`: Administrative queries and audit inspections.
+### 3.1 Ingestion & Edge Security
+- **HMAC Signature Verification:** Verifies the cryptographic digest provided in the `X-Line-Signature` header against the application secret `LINE_CHANNEL_SECRET`.
+- **Event Idempotency:** Extracts `webhookEventId` to identify and silently discard re-delivered events from LINE edge retries.
+- **Fast Acknowledgment:** Ingestion responds with HTTP 200 within milliseconds to meet LINE's strict response timeout requirements, deferring heavy computation to background tasks.
 
-### 3.2 Agent Orchestration Architecture
-The `AgentOrchestrator` implements a three-tier autonomy model:
-- **L1 (Observe):** Silently monitors conversation streams, extracts entities, and invokes memory tools without cluttering group chat.
-- **L2 (Assist):** When discussions are detected (travel ideas, expense mentions, schedule coordination), provides suggestions, draft calculations, and clarifying prompts.
-- **L3 (Execute):** Executes authorized tools with schema-validated parameters.
+### 3.2 Agent Orchestrator & Autonomy Tiers
+The orchestrator drives agent behavior through three explicit operational tiers:
+- **L1 (Observe):** Silently monitors conversation streams, identifies factual entities, user preferences, and decisions, and stores them in group memory without interrupting chat.
+- **L2 (Assist):** Triggers when ambiguous planning, expense discussions, or scheduling requests are detected, offering structured suggestions and calculations.
+- **L3 (Execute):** Executes system mutations (recording debt, setting reminders, creating tasks) with schema validation and role-based confirmation gates.
 
-### 3.3 Memory Architecture
-Group memory is managed hierarchically:
-1. **Short-Term Context Window:** The last 15-30 chronological messages in the specific group.
-2. **Persistent Structured Memory:** Stored in the `memories` table with categories:
-   - `factual`: Immutable or long-lasting facts (e.g., "Team wifi password", "Office address").
-   - `event_decision`: Group consensus reached in past chats (e.g., "Offsite confirmed for Dec 15th").
-   - `user_preference`: Individual member dietary restrictions, preferred tools, or working hours.
-   - `project`: Repository links, project goals, tech stack.
-3. **Memory Correction & Expiration:** Memories include `expires_at`, `source_message_id`, and `is_active` flags to support full auditing, revision, and privacy-compliant deletion.
+### 3.3 LLM Multi-Provider Architecture & Capability Registry
 
-### 3.4 Tool Execution & Permission Architecture
-- **Tool Registry:** Tools are declared using Python decorators with explicit Pydantic schemas and auto-generated JSON function schemas.
-- **Permission Matrix:** Every tool is assigned a strict security policy:
-  - `AUTOMATIC`: Read-only queries, memory lookups, draft calculations, conversational summaries.
-  - `CONFIRM_AMBIGUOUS`: Shared expense recording when participant lists are incomplete or assumptions are required.
-  - `REQUIRE_APPROVAL`: Financial commitments, external bookings, GitHub public repo publishing.
-  - `EXPLICIT_CONFIRMATION`: Destructive operations (repository deletion, irreversible state drops).
+```
+                    ┌─────────────────────────┐
+                    │    ModelCapability      │
+                    │         Profile         │
+                    └────────────┬────────────┘
+                                 │
+           ┌─────────────────────┴─────────────────────┐
+           ▼                                           ▼
+┌──────────────────────┐                    ┌──────────────────────┐
+│    Gemini Adapter    │                    │  OpenAI-Compatible   │
+│  (Google GenAI SDK)  │                    │     GGUF Adapter     │
+├──────────────────────┤                    ├──────────────────────┤
+│ - Model: gemini-3.5  │                    │ - Model: Qwen 3.5 9B │
+│ - Tools: SUPPORTED   │                    │ - Tools: UNSUPPORTED │
+│ - Vision: SUPPORTED  │                    │ - Quant: IQ3_M       │
+│ - Reasoning: SUPP.   │                    │ - Context: 32,768    │
+└──────────────────────┘                    └──────────────────────┘
+```
 
-### 3.5 Database Architecture
-- **Engine:** PostgreSQL 16+ via SQLAlchemy 2.0 Async (`asyncpg`).
-- **Isolation:** Multi-tenant scoping enforced via `GroupScopedMixin` on all domain entities.
-- **Timezone Standard:** Timestamps stored in `TIMESTAMPTZ` (UTC internally), converted to `Asia/Bangkok` (UTC+7) at presentation boundaries.
+The system separates provider configuration from model configuration:
+1. **Model Capability Profiles (`app/services/llm/types.py`):**
+   Models declare explicit capability status flags: `SUPPORTED`, `UNSUPPORTED`, or `UNKNOWN`. Capabilities include:
+   - Tool/Function Calling
+   - Streaming
+   - Vision
+   - Reasoning
+   - Context Window and Maximum Output Tokens
+   - Quantization and source repository details
+2. **Capability-Aware Router (`app/services/llm/router.py`):**
+   - Routes requests based on workload demand (`CONVERSATION`, `REASONING`, `TOOL_EXECUTION`, `SUMMARIZATION`, `BACKGROUND`).
+   - Rejects routing a tool workload to a model with `UNSUPPORTED` or `UNKNOWN` tool support.
+   - Detects connection drops (`EndpointConnectionError`) or authentication failures (`AuthenticationError`) and automatically triggers the fallback provider while safeguarding existing context.
+3. **Duplicate Tool Prevention:**
+   If a model initiates a tool execution that successfully alters external state before an adapter crash, the fallback router does not re-run the tool; instead, it synthesizes the user-facing response using the cached tool result.
 
-### 3.6 LINE Integration Architecture
-- Uses asynchronous HTTP clients (`httpx`) and `line-bot-sdk` to interact with LINE endpoints.
-- Supports both immediate token-based replies (`replyToken` valid for 1 minute) and proactive push messages (`push_text` / Flex Messages) for scheduled reminders.
+### 3.4 Runtime Model Selection Subsystem
+Administrators configure active models dynamically using in-chat commands:
+- `/model`: Displays current model configuration.
+- `/models`: Lists all registered models with capability indicators.
+- `/model qwen`: Switches conversation and brainstorming workloads to the local Qwen 3.5 GGUF instance.
+- `/model gemini`: Reverts conversation workloads to Google Gemini 3.5 Flash.
+- `/model status`: Performs non-destructive connectivity and authentication diagnostics on all configured endpoints.
 
+Selections are committed to the `groups` database table in `settings_json` and restored seamlessly upon application restart.
+
+### 3.5 Tool Safety & Policy Engine
+Tools must inherit from `BaseTool` and specify a `PermissionPolicy`:
+- `AUTOMATIC`: Read-only queries, memory lookups, and summaries.
+- `CONFIRM_AMBIGUOUS`: Expense recording with missing participant data.
+- `REQUIRE_APPROVAL`: Financial commitments and external state mutations.
+- `EXPLICIT_CONFIRMATION`: Irreversible operations.
+
+### 3.6 Data Persistence & Multi-Tenant Scoping
+The relational store (PostgreSQL in production, SQLite in local development) uses `GroupScopedMixin` across all domain models:
+- `groups`: Metadata, administrator mappings, and active LLM configuration.
+- `messages`: Chronological conversation logs for context assembly.
+- `memories`: Structured factual, preference, and decision entries with expiration timestamps.
+- `expenses`: Split records, debts, and settlement logs.
+- `reminders`: Scheduled task alerts managed by APScheduler.
+- `audit_logs`: Tamper-evident ledger of administrative actions and tool invocations.
