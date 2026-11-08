@@ -86,6 +86,8 @@ class ModelCapabilityProfile(BaseModel):
     deployment_type: DeploymentType = DeploymentType.CLOUD_API
     availability_status: AvailabilityStatus = AvailabilityStatus.ACTIVE
     source_repo: Optional[str] = None
+    file_name: Optional[str] = None
+    quantization: Optional[str] = None
     notes: Optional[str] = None
 
     def is_tool_calling_supported(self) -> bool:

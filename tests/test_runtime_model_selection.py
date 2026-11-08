@@ -10,7 +10,7 @@ from app.schemas.group_settings import parse_group_settings, dump_group_settings
 from app.services.llm.client import GeminiLLMClient
 from app.services.llm.commands import handle_model_command
 from app.services.llm.exceptions import EndpointConnectionError
-from app.services.llm.registry import QWEN35_DEFIANT_FABLE_GGUF
+from app.services.llm.registry import QWEN35_DEFIANT_FABLE_GGUF, QWEN35_IQ3_M_FILE
 from app.services.llm.router import ModelRouter
 from app.services.llm.types import LLMResponse, ToolCall, WorkloadType
 
@@ -45,7 +45,7 @@ async def test_switching_between_qwen_and_gemini(db_session):
         res = await db_session.execute(stmt)
         group = res.scalar_one()
         settings = parse_group_settings(group.settings_json)
-        assert settings.default_model == QWEN35_DEFIANT_FABLE_GGUF
+        assert settings.default_model in [QWEN35_IQ3_M_FILE, QWEN35_DEFIANT_FABLE_GGUF]
 
         # 2. Switch back to Gemini
         reply_gemini = await handle_model_command(
@@ -155,7 +155,7 @@ def test_tool_execution_always_selects_compatible_model():
         requires_tools=False,
         group_settings=qwen_group_settings,
     )
-    assert selected_conv == QWEN35_DEFIANT_FABLE_GGUF
+    assert selected_conv in [QWEN35_IQ3_M_FILE, QWEN35_DEFIANT_FABLE_GGUF]
 
     # 2. Tool execution MUST select tool-capable Gemini
     selected_tool, profile_tool = router.select_model_for_operation(

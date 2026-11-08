@@ -8,7 +8,11 @@ from app.models.group import Group
 from app.schemas.group_settings import parse_group_settings, dump_group_settings
 from app.services.llm.client import GeminiLLMClient
 from app.services.llm.openai_client import OpenAICompatibleClient
-from app.services.llm.registry import QWEN35_DEFIANT_FABLE_GGUF, get_model_registry
+from app.services.llm.registry import (
+    QWEN35_DEFIANT_FABLE_GGUF,
+    QWEN35_IQ3_M_FILE,
+    get_model_registry,
+)
 from app.services.llm.router import ModelRouter, normalize_model_name
 from app.services.llm.types import WorkloadType
 
@@ -110,7 +114,7 @@ async def handle_model_command(
         custom_client = OpenAICompatibleClient(
             base_url=settings.custom_llm_base_url,
             api_key=settings.custom_llm_api_key,
-            model=QWEN35_DEFIANT_FABLE_GGUF,
+            model=QWEN35_IQ3_M_FILE,
         )
         is_healthy, status_msg = await custom_client.check_health()
         if not is_healthy and "Offline" in status_msg:
@@ -122,9 +126,9 @@ async def handle_model_command(
             )
 
         # Update group settings in database
-        group_settings.default_model = QWEN35_DEFIANT_FABLE_GGUF
-        group_settings.general_conversation_model = QWEN35_DEFIANT_FABLE_GGUF
-        group_settings.summarization_model = QWEN35_DEFIANT_FABLE_GGUF
+        group_settings.default_model = QWEN35_IQ3_M_FILE
+        group_settings.general_conversation_model = QWEN35_IQ3_M_FILE
+        group_settings.summarization_model = QWEN35_IQ3_M_FILE
         # Rule 3: Never route tool execution to Qwen3.5 (remains Gemini)
         group_settings.tool_execution_model = "gemini-3.5-flash"
 
@@ -133,7 +137,8 @@ async def handle_model_command(
 
         return (
             "✅ สลับโมเดลเริ่มต้นของกลุ่มนี้เรียบร้อยแล้วค่ะ!\n\n"
-            "🤖 โมเดลการสนทนา & สรุป: Qwen3.5 (9B GGUF Fine-Tuned)\n"
+            "🤖 โมเดลการสนทนา & สรุป: Qwen3.5 (9B GGUF IQ3_M - CapitalSTEEZ47)\n"
+            "📁 ไฟล์: Qwen3.5-9B-The-Defiant-Fable-Uncnr-Heretic-NEO-MAX-MTP-IQ3_M.gguf\n"
             "🛠️ โมเดลการเรียก Tool & Function: Gemini 3.5 Flash (Verified Tool Calling)\n"
             "💾 บันทึกการตั้งค่าลงฐานข้อมูลเรียบร้อย (มีผลถาวรแม้เริ่มระบบใหม่)"
         )
@@ -187,3 +192,4 @@ async def handle_model_command(
         )
 
     return None
+

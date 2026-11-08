@@ -9,7 +9,12 @@ from app.services.llm.exceptions import (
     ProviderAPIError,
     UnsupportedCapabilityError,
 )
-from app.services.llm.registry import ModelRegistry, QWEN35_DEFIANT_FABLE_GGUF, get_model_registry
+from app.services.llm.registry import (
+    ModelRegistry,
+    QWEN35_DEFIANT_FABLE_GGUF,
+    QWEN35_IQ3_M_FILE,
+    get_model_registry,
+)
 from app.services.llm.types import (
     LLMResponse,
     ModelCapabilityProfile,
@@ -24,8 +29,10 @@ def normalize_model_name(name: Optional[str]) -> Optional[str]:
     if not name:
         return None
     lower = name.strip().lower()
-    if lower in ["qwen", "qwen3.5", "qwen-3.5"]:
-        return QWEN35_DEFIANT_FABLE_GGUF
+    if lower in ["qwen", "qwen3.5", "qwen-3.5", "iq3_m", "qwen-iq3"]:
+        return QWEN35_IQ3_M_FILE
+    if "iq3_m" in lower or "defiant-fable" in lower:
+        return QWEN35_IQ3_M_FILE
     if lower in ["gemini", "gemini-flash", "gemini-3.5"]:
         return "gemini-3.5-flash"
     if lower in ["gemini-2.5"]:

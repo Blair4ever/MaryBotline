@@ -110,7 +110,9 @@ def test_qwen35_model_configuration():
     assert profile.model_id == QWEN35_DEFIANT_FABLE_GGUF
     assert profile.model_family == "Qwen3.5"
     assert profile.parameters == "9B"
-    assert "https://huggingface.co/zugquants/" in profile.source_repo
+    assert "CapitalSTEEZ47" in profile.source_repo
+    assert profile.quantization == "IQ3_M"
+    assert "IQ3_M.gguf" in profile.file_name
     assert profile.deployment_type == DeploymentType.GGUF_LOCAL
     assert profile.availability_status == AvailabilityStatus.ACTIVE
 

@@ -12,8 +12,10 @@ from app.services.llm.types import (
 logger = logging.getLogger(__name__)
 
 
-# Specific Qwen3.5 fine-tuned model identifier
+# Specific Qwen3.5 fine-tuned model identifiers
 QWEN35_DEFIANT_FABLE_GGUF = "Qwen3.5-9B-The-Defiant-Fable-Uncensored-Heretic-NEO-IMATRIX-MAX-MTP-GGUF"
+QWEN35_IQ3_M_FILE = "Qwen3.5-9B-The-Defiant-Fable-Uncnr-Heretic-NEO-MAX-MTP-IQ3_M.gguf"
+QWEN35_REPO_URL = "https://huggingface.co/CapitalSTEEZ47/Qwen3.5-9B-The-Defiant-Fable-Uncensored-Heretic-NEO-IMATRIX-MAX-MTP-GGUF"
 
 
 class ModelRegistry:
@@ -68,7 +70,7 @@ class ModelRegistry:
             )
         )
 
-        # 3. Fine-tuned Qwen3.5 9B GGUF Model
+        # 3. Fine-tuned Qwen3.5 9B GGUF Model (Repository Level)
         self.register(
             ModelCapabilityProfile(
                 model_id=QWEN35_DEFIANT_FABLE_GGUF,
@@ -77,7 +79,6 @@ class ModelRegistry:
                 parameters="9B",
                 context_window=32768,
                 max_output_tokens=8192,
-                # Fine-tuned uncensored/creative model; function calling is not fine-tuned/supported
                 tool_calling_support=CapabilityStatus.UNSUPPORTED,
                 streaming_support=CapabilityStatus.SUPPORTED,
                 vision_support=CapabilityStatus.UNSUPPORTED,
@@ -85,8 +86,33 @@ class ModelRegistry:
                 pricing=None,  # Open-weight / self-hosted
                 deployment_type=DeploymentType.GGUF_LOCAL,
                 availability_status=AvailabilityStatus.ACTIVE,
-                source_repo="https://huggingface.co/zugquants/Qwen3.5-9B-The-Defiant-Fable-Uncensored-Heretic-NEO-IMATRIX-MAX-MTP-GGUF",
-                notes="Fine-tuned Qwen3.5 9B in GGUF format with IMATRIX quantization for self-hosted engines.",
+                source_repo=QWEN35_REPO_URL,
+                file_name=QWEN35_IQ3_M_FILE,
+                quantization="IQ3_M",
+                notes="Fine-tuned Qwen3.5 9B in GGUF format (CapitalSTEEZ47) with IQ3_M quantization.",
+            )
+        )
+
+        # 4. Fine-tuned Qwen3.5 9B Specific GGUF File Variant (IQ3_M)
+        self.register(
+            ModelCapabilityProfile(
+                model_id=QWEN35_IQ3_M_FILE,
+                provider="custom",
+                model_family="Qwen3.5",
+                parameters="9B",
+                context_window=32768,
+                max_output_tokens=8192,
+                tool_calling_support=CapabilityStatus.UNSUPPORTED,
+                streaming_support=CapabilityStatus.SUPPORTED,
+                vision_support=CapabilityStatus.UNSUPPORTED,
+                reasoning_support=CapabilityStatus.SUPPORTED,
+                pricing=None,  # Open-weight / self-hosted
+                deployment_type=DeploymentType.GGUF_LOCAL,
+                availability_status=AvailabilityStatus.ACTIVE,
+                source_repo=QWEN35_REPO_URL,
+                file_name=QWEN35_IQ3_M_FILE,
+                quantization="IQ3_M",
+                notes="Fine-tuned Qwen3.5 9B GGUF IQ3_M quantization file from CapitalSTEEZ47.",
             )
         )
 
