@@ -141,38 +141,39 @@ class GeminiLLMClient(BaseLLMClient):
         )
 
 
-def get_llm_client(workload: WorkloadType = WorkloadType.GENERAL_CONVERSATION) -> BaseLLMClient:
+    async def check_health(self) -> tuple[bool, str]:
+        """Checks connectivity and credential status of Gemini client."""
+        if not self.api_key:
+            return False, "LLM_API_KEY not configured"
+        return True, "Online (Google Gemini Cloud API configured)"
+
+
+def get_llm_client(
+    workload: WorkloadType = WorkloadType.GENERAL_CONVERSATION,
+    group_settings: Optional[Any] = None,
+) -> BaseLLMClient:
     """
-    Factory to retrieve configured LLM client based on workload and availability.
+    Factory to retrieve configured LLM client based on workload, group settings, and availability.
     Enforces capability validation: models lacking required capabilities (e.g. tool execution)
     will automatically route to a capable model.
     """
     settings = get_settings()
+    router = ModelRouter()
+    requires_tools = (workload == WorkloadType.TOOL_EXECUTION)
 
-    # If custom LLM is enabled
-    if settings.custom_llm_enabled:
-        router = ModelRouter()
-        requires_tools = (workload == WorkloadType.TOOL_EXECUTION)
-        selected_model, profile = router.select_model_for_operation(
-            workload=workload,
-            requires_tools=requires_tools,
+    selected_model, profile = router.select_model_for_operation(
+        workload=workload,
+        requires_tools=requires_tools,
+        group_settings=group_settings,
+    )
+
+    if profile and profile.provider == "custom":
+        return OpenAICompatibleClient(
+            base_url=settings.custom_llm_base_url,
+            api_key=settings.custom_llm_api_key,
+            model=selected_model,
+            provider_name=settings.custom_llm_provider_name or "custom_llm",
+            capability_profile=profile,
         )
 
-        # If routed to custom model
-        if selected_model == settings.custom_llm_model:
-            return OpenAICompatibleClient(
-                base_url=settings.custom_llm_base_url,
-                api_key=settings.custom_llm_api_key,
-                model=settings.custom_llm_model,
-                provider_name=settings.custom_llm_provider_name or "custom_llm",
-                capability_profile=profile,
-            )
-        # Otherwise routed to fallback model
-        return GeminiLLMClient(model=selected_model)
-
-    provider = settings.llm_provider.lower()
-    if provider in ["custom", "openai_compatible"]:
-        return OpenAICompatibleClient()
-
-    # Default fallback to Gemini
-    return GeminiLLMClient()
+    return GeminiLLMClient(model=selected_model)

@@ -237,6 +237,18 @@ async def process_single_event(event_dict: dict) -> None:
                 f"🧠 Memory: {'เปิด' if group_settings.memory_enabled else 'ปิด'}"
             )
             reply_sent = await line_client.reply_text(event.replyToken, status_text)
+        elif clean_text.lower().startswith("/model"):
+            from app.services.llm.commands import handle_model_command
+            is_admin = not is_group or (member and member.role == "admin")
+            cmd_reply = await handle_model_command(
+                text=clean_text,
+                group_id=target_id,
+                user_id=user_id,
+                is_admin=is_admin,
+                db=db,
+            )
+            if cmd_reply:
+                reply_sent = await line_client.reply_text(event.replyToken, cmd_reply)
         elif clean_text.lower().startswith("/help"):
             help_text = (
                 "👋 สวัสดีค่ะ แมรี่ (MARY) พร้อมช่วยเหลือค่ะ!\n\n"

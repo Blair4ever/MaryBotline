@@ -103,3 +103,4 @@ class ModelCapabilityProfile(BaseModel):
     def is_reasoning_supported(self) -> bool:
         """Returns True ONLY if explicitly supported. Unknown returns False."""
         return self.reasoning_support == CapabilityStatus.SUPPORTED
+

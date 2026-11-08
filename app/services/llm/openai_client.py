@@ -74,6 +74,40 @@ class OpenAICompatibleClient:
             return f"{self.base_url}/chat/completions"
         return f"{self.base_url}/v1/chat/completions"
 
+    async def check_health(self) -> tuple[bool, str]:
+        """
+        Actively checks the endpoint connectivity and authentication.
+        Returns (is_healthy, status_message).
+        Never reports connected merely because configuration exists.
+        """
+        if not self.base_url:
+            return False, "Base URL not configured"
+
+        # Check models or health endpoint
+        url = f"{self.base_url}/models" if self.base_url.endswith("/v1") else f"{self.base_url}/v1/models"
+        headers = self._build_headers()
+
+        try:
+            async with httpx.AsyncClient(timeout=4.0) as client:
+                resp = await client.get(url, headers=headers)
+                if resp.status_code in [401, 403]:
+                    return False, f"Authentication failure (HTTP {resp.status_code})"
+                if resp.status_code == 200:
+                    return True, "Online (Endpoint responsive)"
+                if resp.status_code == 404:
+                    # Fallback check for self-hosted engines with /health or /
+                    health_resp = await client.get(f"{self.base_url}/health")
+                    if health_resp.status_code == 200:
+                        return True, "Online (Health OK)"
+                    return True, f"Online (HTTP {resp.status_code})"
+                return False, f"Endpoint error (HTTP {resp.status_code})"
+        except (httpx.ConnectError, httpx.NetworkError):
+            return False, f"Offline (Connection refused at {self.base_url})"
+        except httpx.TimeoutException:
+            return False, f"Offline (Connection timeout at {self.base_url})"
+        except Exception as exc:
+            return False, f"Connection error: {exc}"
+
     def _validate_capabilities(self, tools: Optional[List[Dict[str, Any]]] = None) -> None:
         """
         Validates whether the model/endpoint supports the requested operations.
@@ -275,3 +309,4 @@ class OpenAICompatibleClient:
             provider=self.provider_name,
             raw_response=data,
         )
+

@@ -132,3 +132,4 @@ def get_model_registry() -> ModelRegistry:
     if _global_registry is None:
         _global_registry = ModelRegistry()
     return _global_registry
+

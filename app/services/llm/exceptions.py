@@ -26,3 +26,4 @@ class ProviderAPIError(LLMError):
 class UnsupportedCapabilityError(LLMError):
     """Raised when an operation requires a capability the model/endpoint does not support."""
     pass
+

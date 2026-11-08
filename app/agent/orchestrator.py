@@ -1,7 +1,7 @@
 import inspect
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.context import ContextManager
@@ -11,7 +11,9 @@ from app.database.session import AsyncSessionLocal
 from app.models.audit import AgentAction
 from app.models.conversation import Message
 from app.services.line.client import LineMessagingService
-from app.services.llm.client import BaseLLMClient, get_llm_client
+from app.services.llm.client import BaseLLMClient, GeminiLLMClient, get_llm_client
+from app.services.llm.router import ModelRouter
+from app.services.llm.types import WorkloadType
 
 logger = logging.getLogger(__name__)
 
@@ -111,13 +113,35 @@ class AgentOrchestrator:
         # 2. Get registered tools
         tools_schema = tool_registry.get_openai_tools_schema()
 
-        # 3. LLM reasoning
-        ai_provider = self.llm.__class__.__name__
-        logger.info(f"Invoking AI Orchestrator with provider: {ai_provider}")
-        response = await self.llm.chat_completion(
+        # 3. LLM reasoning with Router and Fallback
+        router = ModelRouter()
+        primary_client = self.llm or get_llm_client(
+            workload=WorkloadType.GENERAL_CONVERSATION,
+            group_settings=group_settings,
+        )
+        fallback_client = GeminiLLMClient(model=router.fallback_model_id)
+
+        # Check if active model supports tool calling
+        selected_model, profile = router.select_model_for_operation(
+            workload=WorkloadType.GENERAL_CONVERSATION,
+            requires_tools=False,
+            group_settings=group_settings,
+        )
+        model_supports_tools = profile.is_tool_calling_supported() if profile else True
+        effective_tools = tools_schema if (tools_schema and model_supports_tools) else None
+
+        executed_tool_ids: Set[str] = set()
+
+        ai_provider = primary_client.__class__.__name__
+        logger.info(f"Invoking AI Orchestrator with provider: {ai_provider} (model: {selected_model})")
+
+        response = await router.execute_with_fallback(
+            primary_client=primary_client,
+            fallback_client=fallback_client,
             messages=messages,
-            tools=tools_schema if tools_schema else None,
+            tools=effective_tools,
             system_instruction=messages[0]["content"] if messages and messages[0]["role"] == "system" else None,
+            executed_tool_ids=executed_tool_ids,
         )
 
         final_reply_text = response.content or ""
@@ -125,6 +149,12 @@ class AgentOrchestrator:
         # 4. Handle tool calls if returned
         if response.tool_calls:
             for tool_call in response.tool_calls:
+                # Safeguard: Never execute a previously completed tool call again during fallback/retry
+                if tool_call.id in executed_tool_ids:
+                    logger.info(f"Skipping duplicate tool call execution: {tool_call.id} ({tool_call.name})")
+                    continue
+                executed_tool_ids.add(tool_call.id)
+
                 tool_name = tool_call.name
                 args = tool_call.arguments
                 logger.info(f"LLM requested tool call: {tool_name} with args: {args}")
@@ -156,7 +186,13 @@ class AgentOrchestrator:
                         "role": "user",
                         "content": f"ผลลัพธ์จาก {tool_name}: {json.dumps(tool_result, ensure_ascii=False)}. กรุณาตอบสรุปให้สมาชิกในกลุ่มทราบอย่างสุภาพและชัดเจน",
                     })
-                    second_response = await self.llm.chat_completion(messages=messages)
+                    # Use router with fallback for summarizing results
+                    second_response = await router.execute_with_fallback(
+                        primary_client=primary_client,
+                        fallback_client=fallback_client,
+                        messages=messages,
+                        executed_tool_ids=executed_tool_ids,
+                    )
                     final_reply_text = second_response.content or "ดำเนินการเรียบร้อยแล้วค่ะ"
 
         # 5. Send reply via LINE

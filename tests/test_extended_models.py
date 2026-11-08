@@ -370,3 +370,4 @@ async def test_no_duplicate_tool_execution():
     assert len(response.tool_calls) == 1
     assert response.tool_calls[0].id == "call_new_002"
     assert response.tool_calls[0].name == "send_summary"
+

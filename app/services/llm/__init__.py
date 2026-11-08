@@ -1,3 +1,4 @@
+from app.services.llm.commands import handle_model_command
 from app.services.llm.exceptions import (
     AuthenticationError,
     ConfigurationError,
@@ -17,7 +18,7 @@ from app.services.llm.registry import (
     QWEN35_DEFIANT_FABLE_GGUF,
     get_model_registry,
 )
-from app.services.llm.router import ModelRouter
+from app.services.llm.router import ModelRouter, normalize_model_name
 from app.services.llm.types import (
     AvailabilityStatus,
     CapabilityStatus,
@@ -54,4 +55,7 @@ __all__ = [
     "WorkloadType",
     "get_llm_client",
     "get_model_registry",
+    "handle_model_command",
+    "normalize_model_name",
 ]
+

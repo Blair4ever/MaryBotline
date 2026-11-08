@@ -9,7 +9,7 @@ from app.services.llm.exceptions import (
     ProviderAPIError,
     UnsupportedCapabilityError,
 )
-from app.services.llm.registry import ModelRegistry, get_model_registry
+from app.services.llm.registry import ModelRegistry, QWEN35_DEFIANT_FABLE_GGUF, get_model_registry
 from app.services.llm.types import (
     LLMResponse,
     ModelCapabilityProfile,
@@ -17,6 +17,20 @@ from app.services.llm.types import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_model_name(name: Optional[str]) -> Optional[str]:
+    """Resolves short model names (e.g. 'qwen', 'gemini') to canonical model IDs."""
+    if not name:
+        return None
+    lower = name.strip().lower()
+    if lower in ["qwen", "qwen3.5", "qwen-3.5"]:
+        return QWEN35_DEFIANT_FABLE_GGUF
+    if lower in ["gemini", "gemini-flash", "gemini-3.5"]:
+        return "gemini-3.5-flash"
+    if lower in ["gemini-2.5"]:
+        return "gemini-2.5-flash"
+    return name
 
 
 class ModelRouter:
@@ -61,8 +75,9 @@ class ModelRouter:
 
     def set_workload_model(self, workload: WorkloadType, model_id: str) -> None:
         """Configures a specific model for a workload category."""
-        self._workload_mappings[workload] = model_id
-        logger.info(f"Assigned model '{model_id}' to workload '{workload.value}'.")
+        canonical = normalize_model_name(model_id) or model_id
+        self._workload_mappings[workload] = canonical
+        logger.info(f"Assigned model '{canonical}' to workload '{workload.value}'.")
 
     def get_workload_model(self, workload: WorkloadType) -> str:
         """Gets assigned model ID for a workload."""
@@ -73,12 +88,43 @@ class ModelRouter:
         workload: WorkloadType,
         requires_tools: bool = False,
         requires_vision: bool = False,
+        group_settings: Optional[Any] = None,
     ) -> Tuple[str, ModelCapabilityProfile]:
         """
         Selects a model verified to support the required capabilities for the operation.
         Enforces rule: A model must not be selected for an operation requiring capabilities it does not support.
+        Supports per-group settings overrides.
         """
-        target_model_id = self.get_workload_model(workload)
+        target_model_id: Optional[str] = None
+
+        if group_settings:
+            if workload == WorkloadType.TOOL_EXECUTION:
+                target_model_id = group_settings.tool_execution_model or self.fallback_model_id
+            elif workload == WorkloadType.GENERAL_CONVERSATION:
+                target_model_id = (
+                    group_settings.general_conversation_model
+                    or group_settings.default_model
+                    or self.get_workload_model(workload)
+                )
+            elif workload == WorkloadType.COMPLEX_REASONING:
+                target_model_id = (
+                    group_settings.reasoning_model
+                    or group_settings.default_model
+                    or self.get_workload_model(workload)
+                )
+            elif workload == WorkloadType.SUMMARIZATION:
+                target_model_id = (
+                    group_settings.summarization_model
+                    or group_settings.default_model
+                    or self.get_workload_model(workload)
+                )
+            else:
+                target_model_id = group_settings.default_model or self.get_workload_model(workload)
+
+        if not target_model_id:
+            target_model_id = self.get_workload_model(workload)
+
+        target_model_id = normalize_model_name(target_model_id) or self.fallback_model_id
         profile = self.registry.get(target_model_id)
 
         # 1. Check if model exists
@@ -178,3 +224,4 @@ class ModelRouter:
                 fallback_response.tool_calls = clean_tool_calls
 
             return fallback_response
+
