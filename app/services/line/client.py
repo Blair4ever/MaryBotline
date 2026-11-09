@@ -13,7 +13,8 @@ class LineMessagingService:
 
     def __init__(self, channel_access_token: Optional[str] = None) -> None:
         settings = get_settings()
-        self.access_token = channel_access_token or settings.line_channel_access_token
+        raw_token = channel_access_token or settings.line_channel_access_token or ""
+        self.access_token = raw_token.strip().strip("'\"")
         self._headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
@@ -41,6 +42,10 @@ class LineMessagingService:
                 response = await client.post(url, headers=self._headers, json=payload)
                 response.raise_for_status()
                 return True
+            except httpx.HTTPStatusError as exc:
+                resp_text = exc.response.text if exc.response else ""
+                logger.error(f"Failed to send LINE reply HTTP {exc.response.status_code}: {resp_text}")
+                return False
             except httpx.HTTPError as exc:
                 logger.error(f"Failed to send LINE reply: {exc}")
                 return False
