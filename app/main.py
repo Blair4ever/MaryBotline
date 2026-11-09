@@ -38,6 +38,17 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api_router)
+
+    @app.get("/")
+    async def root():
+        return {
+            "status": "ok",
+            "app": settings.app_name,
+            "message": "MARY Botline Service is running.",
+            "health": "/health",
+            "webhook": "/webhooks/line",
+        }
+
     return app
 
 

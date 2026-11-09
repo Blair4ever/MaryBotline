@@ -285,6 +285,10 @@ async def process_single_event(event_dict: dict) -> None:
 
 @router.post("/webhooks/line")
 @router.post("/webhook/line")
+@router.post("/api/webhooks/line")
+@router.post("/api/webhook/line")
+@router.post("/callback")
+@router.post("/webhook")
 async def line_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -298,12 +302,17 @@ async def line_webhook(
     """
     settings = get_settings()
     body_bytes = await request.body()
+    signature = (
+        x_line_signature
+        or request.headers.get("x-line-signature")
+        or request.headers.get("X-Line-Signature")
+    )
 
     # 1. Enforce signature verification when secret is configured
     if settings.line_channel_secret:
-        if not x_line_signature or not verify_line_signature(
+        if not signature or not verify_line_signature(
             body=body_bytes,
-            signature=x_line_signature,
+            signature=signature,
             channel_secret=settings.line_channel_secret,
         ):
             logger.warning("Rejected webhook request with invalid signature.")
