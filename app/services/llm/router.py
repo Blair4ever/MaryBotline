@@ -1,5 +1,6 @@
 import logging
 from typing import Any, Dict, List, Optional, Set, Tuple
+import httpx
 
 from app.config import get_settings
 from app.services.llm.exceptions import (
@@ -207,7 +208,7 @@ class ModelRouter:
 
             return response
 
-        except (EndpointConnectionError, ProviderAPIError, AuthenticationError, UnsupportedCapabilityError) as exc:
+        except (EndpointConnectionError, ProviderAPIError, AuthenticationError, UnsupportedCapabilityError, LLMError, httpx.HTTPError) as exc:
             logger.warning(
                 f"Primary model execution failed ({type(exc).__name__}: {exc}). "
                 f"Preserving conversation context and falling back to {fallback_client.__class__.__name__}."

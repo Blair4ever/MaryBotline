@@ -1,4 +1,5 @@
 import abc
+import asyncio
 import json
 import logging
 from typing import Any, Dict, List, Optional
@@ -95,10 +96,37 @@ class GeminiLLMClient(BaseLLMClient):
                 })
             body["tools"] = [{"functionDeclarations": func_declarations}]
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(url, json=body)
-            resp.raise_for_status()
-            data = resp.json()
+        data = None
+        for attempt in range(3):
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.post(url, json=body)
+                    if resp.status_code in [401, 403]:
+                        raise AuthenticationError(
+                            f"Google Gemini authentication failed (HTTP {resp.status_code}): {resp.text}"
+                        )
+                    if resp.status_code in [500, 502, 503, 504, 429] and attempt < 2:
+                        logger.warning(
+                            f"Google Gemini returned {resp.status_code}, retrying attempt {attempt + 1}/3..."
+                        )
+                        await asyncio.sleep(attempt + 1)
+                        continue
+                    if resp.status_code >= 400:
+                        raise ProviderAPIError(
+                            f"Google Gemini returned error {resp.status_code}: {resp.text}"
+                        )
+                    data = resp.json()
+                    break
+            except (httpx.ConnectError, httpx.TimeoutException, httpx.NetworkError) as net_err:
+                if attempt < 2:
+                    await asyncio.sleep(attempt + 1)
+                    continue
+                raise EndpointConnectionError(
+                    f"Failed to connect to Google Gemini at {url}: {net_err}"
+                ) from net_err
+
+        if not data:
+            raise ProviderAPIError("Failed to obtain response from Google Gemini API after retries.")
 
         # Parse Gemini response
         response_text = ""

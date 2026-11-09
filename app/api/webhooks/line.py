@@ -277,6 +277,14 @@ async def process_single_event(event_dict: dict) -> None:
                 reply_sent = bool(ai_reply)
             except Exception as err:
                 logger.error(f"Agent Orchestrator failed for event {event_id}: {err}", exc_info=True)
+                if event.replyToken:
+                    try:
+                        await line_client.reply_text(
+                            event.replyToken,
+                            "ขออภัยค่ะ ระบบ AI ปลายทางกำลังโหลดสูงชั่วคราว รบกวนลองส่งใหม่อีกครั้งนะคะ 🙏"
+                        )
+                    except Exception:
+                        pass
 
         logger.info(
             f"[Webhook Diagnostic] event_id={event_id} group={safe_group_id} reply_sent={reply_sent}"
