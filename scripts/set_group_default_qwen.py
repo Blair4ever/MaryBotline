@@ -12,7 +12,8 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[1]
 sys.path.append(str(BASE_DIR))
 
-from app.database.session import async_session  # alias created earlier
+from sqlalchemy import select
+from app.database.session import async_session, AsyncSessionLocal
 from app.models.group import Group
 from app.schemas.group_settings import parse_group_settings, dump_group_settings
 from app.services.llm.registry import QWEN35_IQ3_M_FILE
@@ -20,29 +21,29 @@ from app.services.llm.registry import QWEN35_IQ3_M_FILE
 
 async def set_qwen_for_group(group_id: str | None = None) -> None:
     """ตั้งค่า Qwen เป็นโมเดลเริ่มต้นของกลุ่มที่ระบุหรือของทุกกลุ่ม"""
-    async with async_session() as db:
+    async with AsyncSessionLocal() as db:
         if group_id:
-            groups = [await db.get(Group, group_id)]
+            grp = await db.get(Group, group_id)
+            groups = [grp] if grp else []
         else:
-            # ดึงทุกกลุ่ม
-            result = await db.execute(Group.__table__.select())
+            result = await db.execute(select(Group))
             groups = result.scalars().all()
 
         for grp in groups:
             if not grp:
                 continue
             settings = parse_group_settings(grp.settings_json)
-            # ตั้งค่าโมเดล Qwen
+            # ตั้งค่าโมเดลการสนทนาและสรุปเป็น Qwen3.5 9B The Defiant Fable Uncnr
             settings.default_model = QWEN35_IQ3_M_FILE
             settings.general_conversation_model = QWEN35_IQ3_M_FILE
             settings.summarization_model = QWEN35_IQ3_M_FILE
-            # tool execution ยังคงใช้ Gemini เพื่อให้รองรับฟังก์ชัน
+            # tool execution ยังคงใช้ Gemini เพื่อให้รองรับฟังก์ชันเรียก tools
             settings.tool_execution_model = "gemini-3.5-flash"
             grp.settings_json = dump_group_settings(settings)
-            print(f"✅ ตั้งค่า Qwen ให้กับกลุ่ม {grp.id}")
+            print(f"✅ ตั้งค่า Qwen 3.5 9B (The Defiant Fable Uncnr) ให้กับกลุ่ม {grp.id}")
 
         await db.commit()
-        print("🗃️ การอัปเดตเสร็จสิ้น")
+        print("🗃️ อัปเดตกลุ่มทั้งหมดในฐานข้อมูลเรียบร้อยแล้ว")
 
 
 if __name__ == "__main__":

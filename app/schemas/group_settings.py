@@ -20,11 +20,24 @@ class GroupSettings(BaseModel):
     memory_enabled: bool = Field(default=True, description="Enable shared group memory")
 
     # Runtime Model Selection (isolated per group, with fallback to system defaults)
-    default_model: Optional[str] = Field(default=None, description="Default model for the group")
-    general_conversation_model: Optional[str] = Field(default=None, description="Model for general conversation")
+    # Default conversation model: Qwen3.5 9B The Defiant Fable Uncnr
+    default_model: Optional[str] = Field(
+        default="Qwen3.5-9B-The-Defiant-Fable-Uncnr-Heretic-NEO-MAX-MTP-IQ3_M.gguf",
+        description="Default model for the group",
+    )
+    general_conversation_model: Optional[str] = Field(
+        default="Qwen3.5-9B-The-Defiant-Fable-Uncnr-Heretic-NEO-MAX-MTP-IQ3_M.gguf",
+        description="Model for general conversation",
+    )
     reasoning_model: Optional[str] = Field(default=None, description="Model for complex reasoning")
-    tool_execution_model: Optional[str] = Field(default=None, description="Model for tool execution")
-    summarization_model: Optional[str] = Field(default=None, description="Model for summarization")
+    tool_execution_model: Optional[str] = Field(
+        default="gemini-3.5-flash",
+        description="Model for tool execution",
+    )
+    summarization_model: Optional[str] = Field(
+        default="Qwen3.5-9B-The-Defiant-Fable-Uncnr-Heretic-NEO-MAX-MTP-IQ3_M.gguf",
+        description="Model for summarization",
+    )
 
 
 def parse_group_settings(settings_json: Optional[str]) -> GroupSettings:

@@ -41,8 +41,8 @@ class Settings(BaseSettings):
     # Custom / OpenAI-Compatible LLM Settings (for Qwen/self-hosted models)
     custom_llm_base_url: Optional[str] = None
     custom_llm_api_key: Optional[str] = None
-    custom_llm_model: Optional[str] = None
-    custom_llm_provider_name: Optional[str] = None
+    custom_llm_model: Optional[str] = "Qwen3.5-9B-The-Defiant-Fable-Uncnr-Heretic-NEO-MAX-MTP-IQ3_M.gguf"
+    custom_llm_provider_name: Optional[str] = "qwen_gguf"
     custom_llm_enabled: bool = False
 
     # MARY Admin override: LINE user IDs (comma-separated) that always have admin rights

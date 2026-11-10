@@ -179,14 +179,15 @@ async def handle_model_command(
         tool_model = group_settings.tool_execution_model or "gemini-3.5-flash"
         summ_model = group_settings.summarization_model or conv_model
 
-        short_conv = "Qwen3.5 (9B GGUF)" if "qwen" in conv_model.lower() else conv_model
+        short_conv = "Qwen3.5 9B (The Defiant Fable Uncnr)" if "qwen" in conv_model.lower() else conv_model
         short_tool = "Gemini 3.5 Flash (Verified Tools)" if "gemini" in tool_model.lower() else tool_model
+        short_summ = "Qwen3.5 9B (The Defiant Fable Uncnr)" if "qwen" in summ_model.lower() else summ_model
 
         return (
             f"🤖 การตั้งค่าโมเดลปัจจุบันของกลุ่มนี้:\n\n"
             f"• สนทนาทั่วไป: {short_conv}\n"
             f"• การเรียกใช้ Tool: {short_tool}\n"
-            f"• การสรุปข้อความ: {'Qwen3.5' if 'qwen' in summ_model.lower() else summ_model}\n"
+            f"• การสรุปข้อความ: {short_summ}\n"
             f"• สถานะ: บันทึกในฐานข้อมูลแยกรายกลุ่มเรียบร้อย\n\n"
             f"💡 สลับโมเดล: พิมพ์ /model qwen หรือ /model gemini"
         )

@@ -30,9 +30,9 @@ def normalize_model_name(name: Optional[str]) -> Optional[str]:
     if not name:
         return None
     lower = name.strip().lower()
-    if lower in ["qwen", "qwen3.5", "qwen-3.5", "iq3_m", "qwen-iq3"]:
+    if lower in ["qwen", "qwen3.5", "qwen-3.5", "qwen 3.5", "iq3_m", "qwen-iq3", "uncnr", "defiant"]:
         return QWEN35_IQ3_M_FILE
-    if "iq3_m" in lower or "defiant-fable" in lower:
+    if "iq3_m" in lower or "defiant" in lower or "fable" in lower or "uncnr" in lower:
         return QWEN35_IQ3_M_FILE
     if lower in ["gemini", "gemini-flash", "gemini-3.5"]:
         return "gemini-3.5-flash"
