@@ -239,7 +239,10 @@ async def process_single_event(event_dict: dict) -> None:
             reply_sent = await line_client.reply_text(event.replyToken, status_text)
         elif clean_text.lower().startswith("/model"):
             from app.services.llm.commands import handle_model_command
-            is_admin = not is_group or (member and member.role == "admin")
+            # Admin = DB role is 'admin' OR user is listed in MARY_ADMIN_USER_IDS env var
+            is_hardcoded_admin = user_id in settings.admin_user_ids
+            is_db_admin = not is_group or (member and member.role == "admin")
+            is_admin = is_hardcoded_admin or is_db_admin
             cmd_reply = await handle_model_command(
                 text=clean_text,
                 group_id=target_id,

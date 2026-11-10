@@ -16,13 +16,35 @@ services:
         value: Asia/Bangkok
       - key: SECRET_KEY
         generateValue: true
+
+      # LINE Messaging API (set in Render Dashboard → Environment)
       - key: LINE_CHANNEL_SECRET
         sync: false
       - key: LINE_CHANNEL_ACCESS_TOKEN
         sync: false
+
+      # Gemini API (primary LLM & tool execution fallback)
       - key: LLM_API_KEY
         sync: false
       - key: LLM_MODEL
         value: gemini-3.5-flash
       - key: LLM_PROVIDER
         value: gemini
+
+      # Qwen / Custom OpenAI-compatible endpoint (self-hosted)
+      # Set CUSTOM_LLM_ENABLED=true and CUSTOM_LLM_BASE_URL to enable Qwen as default
+      - key: CUSTOM_LLM_ENABLED
+        value: "false"
+      - key: CUSTOM_LLM_BASE_URL
+        sync: false          # e.g. http://your-server:8080/v1
+      - key: CUSTOM_LLM_API_KEY
+        sync: false          # leave empty if no auth required (llama.cpp)
+      - key: CUSTOM_LLM_MODEL
+        value: "Qwen3.5-9B-The-Defiant-Fable-Uncnr-Heretic-NEO-MAX-MTP-IQ3_M.gguf"
+      - key: CUSTOM_LLM_PROVIDER_NAME
+        value: qwen_gguf
+
+      # Hardcoded admin LINE user IDs (comma-separated)
+      # These users can always use /model and admin commands, even before the DB registers them
+      - key: MARY_ADMIN_USER_IDS
+        sync: false          # e.g. Uxxxxxx,Uyyyyyy

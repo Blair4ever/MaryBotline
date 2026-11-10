@@ -38,12 +38,21 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model: str = "gemini-3.5-flash"
 
-    # Custom / OpenAI-Compatible LLM Settings
+    # Custom / OpenAI-Compatible LLM Settings (for Qwen/self-hosted models)
     custom_llm_base_url: Optional[str] = None
     custom_llm_api_key: Optional[str] = None
     custom_llm_model: Optional[str] = None
     custom_llm_provider_name: Optional[str] = None
     custom_llm_enabled: bool = False
+
+    # MARY Admin override: LINE user IDs (comma-separated) that always have admin rights
+    # Useful when the bot hasn't yet seen the user in the group DB
+    mary_admin_user_ids: str = ""
+
+    @property
+    def admin_user_ids(self) -> list[str]:
+        """Return list of hardcoded admin LINE user IDs from env var."""
+        return [uid.strip() for uid in self.mary_admin_user_ids.split(",") if uid.strip()]
 
     # GitHub Integration
     github_token: Optional[str] = None
