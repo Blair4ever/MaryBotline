@@ -59,3 +59,4 @@ if __name__ == "__main__":
         print("Usage: python scripts/set_admin.py <GROUP_ID> <USER_ID>")
         sys.exit(1)
     asyncio.run(set_admin(sys.argv[1], sys.argv[2]))
+
