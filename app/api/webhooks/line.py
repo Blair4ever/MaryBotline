@@ -184,11 +184,16 @@ async def process_single_event(event_dict: dict) -> None:
             elif is_mentioned:
                 # Rule B.1: Mentioned using LINE mention metadata
                 should_activate = True
-                activation_reason = "LINE mention metadata matched MARY"
-            elif lower_text.startswith("mary") or clean_text.startswith("แมรี่"):
-                # Rule B.2: Starts with "MARY" or "Mary" (case-insensitive) or "แมรี่"
+                activation_reason = "LINE mention metadata matched CARPI"
+            elif (
+                lower_text.startswith("carpi")
+                or clean_text.startswith("คาร์ปิ")
+                or lower_text.startswith("mary")
+                or clean_text.startswith("แมรี่")
+            ):
+                # Rule B.2: Starts with "CARPI" or "คาร์ปิ" or "MARY" or "แมรี่"
                 should_activate = True
-                activation_reason = "message begins with MARY prefix"
+                activation_reason = "message begins with CARPI/MARY prefix"
             elif clean_text.startswith("/") or lower_text in ["ping", "status"]:
                 # Rule B.3: Configured commands (/help, /summary, /tasks, etc.)
                 cmd = clean_text.split()[0] if clean_text else "command"
@@ -226,15 +231,15 @@ async def process_single_event(event_dict: dict) -> None:
 
         # Fast path commands
         if lower_text == "ping":
-            reply_sent = await line_client.reply_text(event.replyToken, "pong! MARY is alive.")
-        elif lower_text in ["mary status", "status", "/status"]:
+            reply_sent = await line_client.reply_text(event.replyToken, "⚡ pong! Carpi is online and jacked into Night City.")
+        elif lower_text in ["carpi status", "status", "/status", "mary status"]:
             status_text = (
-                f"🤖 MARY Platform\n"
+                f"🦾 CARPI Netrunner Platform [Cyberpunk Edition]\n"
                 f"📍 Group: {safe_group_id}\n"
                 f"⚙️ Passive Listening: {'เปิด' if group_settings.passive_listening else 'ปิด'}\n"
                 f"🏷️ Mention Required: {'เปิด' if group_settings.mention_required else 'ปิด'}\n"
                 f"🔔 Proactive Alerts: {'เปิด' if group_settings.proactive_notifications else 'ปิด'}\n"
-                f"🧠 Memory: {'เปิด' if group_settings.memory_enabled else 'ปิด'}"
+                f"🧠 Memory / Neural Storage: {'เปิด' if group_settings.memory_enabled else 'ปิด'}"
             )
             reply_sent = await line_client.reply_text(event.replyToken, status_text)
         elif clean_text.lower().startswith("/model"):
@@ -254,12 +259,12 @@ async def process_single_event(event_dict: dict) -> None:
                 reply_sent = await line_client.reply_text(event.replyToken, cmd_reply)
         elif clean_text.lower().startswith("/help"):
             help_text = (
-                "👋 สวัสดีค่ะ แมรี่ (MARY) พร้อมช่วยเหลือค่ะ!\n\n"
+                "⚡ สวัสดีพวกเรา (Chooms)! Carpi (คาร์ปิ) พร้อมลุยใน Night City แล้ว!\n\n"
                 "📌 วิธีเรียกใช้งานในกลุ่ม:\n"
-                "1. แท็กชื่อ @MARY\n"
-                "2. พิมพ์ขึ้นต้นด้วย 'MARY' หรือ 'แมรี่' เช่น 'MARY ช่วยสรุปนัดวันนี้หน่อย'\n"
-                "3. ใช้คำสั่ง เช่น /help, /tasks, /summary, /status, ping\n\n"
-                "💡 ในบทสนทนาทั่วไป แมรี่จะรับฟังเงียบๆ เพื่อไม่รบกวนสมาชิกในกลุ่มค่ะ"
+                "1. แท็กชื่อ @Carpi หรือ @MARY\n"
+                "2. พิมพ์ขึ้นต้นด้วย 'Carpi' หรือ 'คาร์ปิ' เช่น 'Carpi ช่วยสรุป gig วันนี้หน่อย'\n"
+                "3. ใช้คำสั่ง เช่น /help, /tasks, /summary, /status, /model, ping\n\n"
+                "💾 ในการคุยทั่วไป คาร์ปิจะฟังเงียบๆ เพื่อไม่รบกวน chooms ในกลุ่มครับ"
             )
             reply_sent = await line_client.reply_text(event.replyToken, help_text)
         else:

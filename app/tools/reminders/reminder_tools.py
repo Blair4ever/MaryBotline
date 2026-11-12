@@ -46,12 +46,12 @@ async def execute_scheduled_reminder(reminder_id: str) -> bool:
         # Send push notification to the LINE group
         line_client = LineMessagingService()
         push_message = (
-            f"🔔 [แจ้งเตือนจาก MARY]\n"
+            f"⚡ [แจ้งเตือนจาก Carpi]\n"
             f"📌 เรื่อง: {reminder.title}\n"
             f"💬 รายละเอียด: {reminder.message}"
         )
         if reminder.target_member_id:
-            push_message = f"🔔 แจ้งเตือนคุณ @{reminder.target_member_id}\n📌 {reminder.title}\n💬 {reminder.message}"
+            push_message = f"⚡ แจ้งเตือนคุณ @{reminder.target_member_id} (Carpi Alert)\n📌 {reminder.title}\n💬 {reminder.message}"
 
         success = await line_client.push_text(to=reminder.group_id, text=push_message)
 

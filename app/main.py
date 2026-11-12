@@ -32,7 +32,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title=settings.app_name,
-        description="MARY: Autonomous Group AI Agent for LINE",
+        description="CARPI: Autonomous Cyberpunk AI Agent for LINE",
         version="0.1.0",
         lifespan=lifespan,
     )
@@ -44,7 +44,7 @@ def create_app() -> FastAPI:
         return {
             "status": "ok",
             "app": settings.app_name,
-            "message": "MARY Botline Service is running.",
+            "message": "Carpi Botline Service is running (Cyberpunk Edition).",
             "health": "/health",
             "webhook": "/webhooks/line",
         }

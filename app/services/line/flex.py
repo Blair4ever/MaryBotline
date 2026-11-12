@@ -22,7 +22,7 @@ def build_expense_flex(
             "contents": [
                 {
                     "type": "text",
-                    "text": "🧾 สรุปค่าใช้จ่ายกลุ่ม (MARY)",
+                    "text": "🧾 สรุปค่าใช้จ่ายกลุ่ม (Carpi)",
                     "weight": "bold",
                     "color": "#FFFFFF",
                     "size": "sm",
@@ -112,7 +112,7 @@ def build_reminder_flex(
             "contents": [
                 {
                     "type": "text",
-                    "text": "⏰ แจ้งเตือนจาก MARY",
+                    "text": "⏰ แจ้งเตือนจาก Carpi",
                     "weight": "bold",
                     "color": "#FFFFFF",
                     "size": "md",

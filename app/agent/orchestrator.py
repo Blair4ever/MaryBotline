@@ -26,6 +26,7 @@ class AgentOrchestrator:
     """
 
     TRIGGER_KEYWORDS = [
+        "carpi", "คาร์ปิ", "@carpi", "น้องคาร์ปิ",
         "mary", "แมรี่", "น้องแมรี่", "@mary",
     ]
 
@@ -62,8 +63,13 @@ class AgentOrchestrator:
         stripped = text.strip()
         lower_text = stripped.lower()
 
-        # Rule B.2: Message begins with "MARY" or "Mary" (case-insensitive) or "แมรี่"
-        if lower_text.startswith("mary") or stripped.startswith("แมรี่"):
+        # Rule B.2: Message begins with "Carpi", "คาร์ปิ", "MARY", "แมรี่"
+        if (
+            lower_text.startswith("carpi")
+            or stripped.startswith("คาร์ปิ")
+            or lower_text.startswith("mary")
+            or stripped.startswith("แมรี่")
+        ):
             return True
 
         # Rule B.3: Configured commands (/help, /summary, /tasks, etc.)
@@ -256,14 +262,14 @@ class AgentOrchestrator:
             await db.commit()
 
     async def _record_outgoing_message(self, group_id: str, text: str) -> None:
-        """Stores MARY's outgoing message in history."""
+        """Stores Carpi's outgoing message in history."""
         import uuid
         async with AsyncSessionLocal() as db:
             msg = Message(
                 id=str(uuid.uuid4()),
                 group_id=group_id,
-                sender_id="MARY_AGENT",
-                sender_name="MARY",
+                sender_id="CARPI_AGENT",
+                sender_name="CARPI",
                 message_type="text",
                 text=text,
                 direction="outgoing",
