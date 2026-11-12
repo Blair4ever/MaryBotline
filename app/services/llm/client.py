@@ -66,8 +66,6 @@ class GeminiLLMClient(BaseLLMClient):
             logger.warning("No LLM_API_KEY configured. Returning mock assistant response.")
             return LLMResponse(content="[MARY Dev Mode: LLM_API_KEY not configured]")
 
-        url = f"{self.base_url}/models/{self.model}:generateContent?key={self.api_key}"
-
         # Convert standard OpenAI/chat format into Gemini format
         contents = []
         for msg in messages:
@@ -96,37 +94,53 @@ class GeminiLLMClient(BaseLLMClient):
                 })
             body["tools"] = [{"functionDeclarations": func_declarations}]
 
+        # Build candidate model list with automatic fallbacks for 503/429/404 handling
+        candidate_models = [self.model]
+        for fallback_cand in ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-3-flash-preview"]:
+            if fallback_cand not in candidate_models:
+                candidate_models.append(fallback_cand)
+
         data = None
-        for attempt in range(3):
-            try:
-                async with httpx.AsyncClient(timeout=30.0) as client:
-                    resp = await client.post(url, json=body)
-                    if resp.status_code in [401, 403]:
-                        raise AuthenticationError(
-                            f"Google Gemini authentication failed (HTTP {resp.status_code}): {resp.text}"
-                        )
-                    if resp.status_code in [500, 502, 503, 504, 429] and attempt < 2:
-                        logger.warning(
-                            f"Google Gemini returned {resp.status_code}, retrying attempt {attempt + 1}/3..."
-                        )
-                        await asyncio.sleep(attempt + 1)
+        used_model = self.model
+
+        for current_model in candidate_models:
+            url = f"{self.base_url}/models/{current_model}:generateContent?key={self.api_key}"
+            for attempt in range(2):
+                try:
+                    async with httpx.AsyncClient(timeout=30.0) as client:
+                        resp = await client.post(url, json=body)
+                        if resp.status_code in [401, 403]:
+                            raise AuthenticationError(
+                                f"Google Gemini authentication failed (HTTP {resp.status_code}): {resp.text}"
+                            )
+                        if resp.status_code in [500, 502, 503, 504, 429, 404]:
+                            logger.warning(
+                                f"Google Gemini model '{current_model}' returned {resp.status_code} "
+                                f"(attempt {attempt + 1}/2). Will retry or fallback."
+                            )
+                            if attempt < 1:
+                                await asyncio.sleep(0.5)
+                                continue
+                            # Move to next candidate model in cascade
+                            break
+                        if resp.status_code >= 400:
+                            logger.warning(f"Google Gemini model '{current_model}' returned {resp.status_code}: {resp.text}")
+                            break
+                        data = resp.json()
+                        used_model = current_model
+                        break
+                except (httpx.ConnectError, httpx.TimeoutException, httpx.NetworkError) as net_err:
+                    if attempt < 1:
+                        await asyncio.sleep(0.5)
                         continue
-                    if resp.status_code >= 400:
-                        raise ProviderAPIError(
-                            f"Google Gemini returned error {resp.status_code}: {resp.text}"
-                        )
-                    data = resp.json()
+                    logger.warning(f"Connection error to Gemini on model '{current_model}': {net_err}")
                     break
-            except (httpx.ConnectError, httpx.TimeoutException, httpx.NetworkError) as net_err:
-                if attempt < 2:
-                    await asyncio.sleep(attempt + 1)
-                    continue
-                raise EndpointConnectionError(
-                    f"Failed to connect to Google Gemini at {url}: {net_err}"
-                ) from net_err
+
+            if data:
+                break
 
         if not data:
-            raise ProviderAPIError("Failed to obtain response from Google Gemini API after retries.")
+            raise ProviderAPIError("Failed to obtain response from Google Gemini API across all fallback models.")
 
         # Parse Gemini response
         response_text = ""
@@ -163,7 +177,7 @@ class GeminiLLMClient(BaseLLMClient):
             content=response_text if response_text else None,
             tool_calls=tool_calls,
             usage=token_usage,
-            model=self.model,
+            model=used_model,
             provider="google",
             raw_response=data,
         )

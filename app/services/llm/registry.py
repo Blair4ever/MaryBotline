@@ -70,6 +70,46 @@ class ModelRegistry:
             )
         )
 
+        # 2.1 Google Gemini 3.5 Flash Lite (High Availability & Low Latency)
+        self.register(
+            ModelCapabilityProfile(
+                model_id="gemini-3.5-flash-lite",
+                provider="google",
+                model_family="Gemini",
+                parameters="Unknown",
+                context_window=1048576,
+                max_output_tokens=8192,
+                tool_calling_support=CapabilityStatus.SUPPORTED,
+                streaming_support=CapabilityStatus.SUPPORTED,
+                vision_support=CapabilityStatus.SUPPORTED,
+                reasoning_support=CapabilityStatus.SUPPORTED,
+                pricing=ModelPricing(input_cost_per_million=0.0375, output_cost_per_million=0.15),
+                deployment_type=DeploymentType.CLOUD_API,
+                availability_status=AvailabilityStatus.ACTIVE,
+                notes="High-availability lightweight Gemini model with tool support",
+            )
+        )
+
+        # 2.2 Google Gemini 3.8 Flash
+        self.register(
+            ModelCapabilityProfile(
+                model_id="gemini-3.8-flash",
+                provider="google",
+                model_family="Gemini",
+                parameters="Unknown",
+                context_window=1048576,
+                max_output_tokens=8192,
+                tool_calling_support=CapabilityStatus.SUPPORTED,
+                streaming_support=CapabilityStatus.SUPPORTED,
+                vision_support=CapabilityStatus.SUPPORTED,
+                reasoning_support=CapabilityStatus.SUPPORTED,
+                pricing=ModelPricing(input_cost_per_million=0.075, output_cost_per_million=0.30),
+                deployment_type=DeploymentType.CLOUD_API,
+                availability_status=AvailabilityStatus.ACTIVE,
+                notes="Next-generation Gemini Flash model",
+            )
+        )
+
         # 3. Fine-tuned Qwen3.5 9B GGUF Model (Repository Level)
         self.register(
             ModelCapabilityProfile(
