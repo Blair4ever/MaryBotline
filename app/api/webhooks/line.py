@@ -192,9 +192,11 @@ async def process_single_event(event_dict: dict) -> None:
                 or clean_text.startswith("คาร์ปิ")
                 or lower_text.startswith("mary")
                 or clean_text.startswith("แมรี่")
+                or any(k in lower_text for k in ["capri", "คาพริ", "คาปิ", "แคปริ", "carpi", "คาร์ปิ", "mary", "แมรี่"])
             ):
-                # Rule B.2: Starts with "Capri" or "Carpi" or "MARY"
-                activation_reason = "message begins with Capri/Carpi/MARY prefix"
+                # Rule B.2: Starts with or contains Capri / Carpi / MARY
+                should_activate = True
+                activation_reason = "message matches Capri/Carpi/MARY name or keyword"
             elif clean_text.startswith("/") or lower_text in ["ping", "status"]:
                 # Rule B.3: Configured commands (/help, /summary, /tasks, etc.)
                 cmd = clean_text.split()[0] if clean_text else "command"

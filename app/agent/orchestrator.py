@@ -64,7 +64,7 @@ class AgentOrchestrator:
         stripped = text.strip()
         lower_text = stripped.lower()
 
-        # Rule B.2: Message begins with "Capri", "คาพริ", "Carpi", "คาร์ปิ", "MARY", "แมรี่"
+        # Rule B.2: Message begins with or contains bot name
         if (
             lower_text.startswith("capri")
             or stripped.startswith("คาพริ")
@@ -72,6 +72,7 @@ class AgentOrchestrator:
             or stripped.startswith("คาร์ปิ")
             or lower_text.startswith("mary")
             or stripped.startswith("แมรี่")
+            or any(k in lower_text for k in ["capri", "คาพริ", "คาปิ", "แคปริ", "carpi", "คาร์ปิ", "mary", "แมรี่"])
         ):
             return True
 
