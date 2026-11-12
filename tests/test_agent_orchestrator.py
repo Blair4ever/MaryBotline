@@ -36,7 +36,10 @@ def test_agent_orchestrator_should_respond_rules():
     assert orchestrator.should_respond("วันนี้กินข้าว 850 บาท หาร 4 คน", is_group=True) is False
     assert orchestrator.should_respond("ช่วยเตือนความจำตอนบ่ายสอง", is_group=True) is False
 
-    # Group chat: Begins with Carpi or คาร์ปิ or MARY or แมรี่ -> ACTIVATE
+    # Group chat: Begins with Capri or คาพริ or Carpi or คาร์ปิ or MARY or แมรี่ -> ACTIVATE
+    assert orchestrator.should_respond("Capri ช่วยหน่อย", is_group=True) is True
+    assert orchestrator.should_respond("capri เล่นเพลงอะไรดี", is_group=True) is True
+    assert orchestrator.should_respond("คาพริ ว่าไง", is_group=True) is True
     assert orchestrator.should_respond("Carpi ช่วยหน่อย", is_group=True) is True
     assert orchestrator.should_respond("carpi ช่วยสรุป gig วันนี้หน่อย", is_group=True) is True
     assert orchestrator.should_respond("คาร์ปิ รายงานสถานะหน่อย", is_group=True) is True

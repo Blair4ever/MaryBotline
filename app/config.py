@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     )
 
     # General
-    app_name: str = "Carpi"
+    app_name: str = "Capri"
     app_env: str = "development"
     debug: bool = True
     port: int = 8000

@@ -26,6 +26,7 @@ class AgentOrchestrator:
     """
 
     TRIGGER_KEYWORDS = [
+        "capri", "คาพริ", "กัปปรี", "@capri", "น้องคาพริ",
         "carpi", "คาร์ปิ", "@carpi", "น้องคาร์ปิ",
         "mary", "แมรี่", "น้องแมรี่", "@mary",
     ]
@@ -63,9 +64,11 @@ class AgentOrchestrator:
         stripped = text.strip()
         lower_text = stripped.lower()
 
-        # Rule B.2: Message begins with "Carpi", "คาร์ปิ", "MARY", "แมรี่"
+        # Rule B.2: Message begins with "Capri", "คาพริ", "Carpi", "คาร์ปิ", "MARY", "แมรี่"
         if (
-            lower_text.startswith("carpi")
+            lower_text.startswith("capri")
+            or stripped.startswith("คาพริ")
+            or lower_text.startswith("carpi")
             or stripped.startswith("คาร์ปิ")
             or lower_text.startswith("mary")
             or stripped.startswith("แมรี่")
@@ -268,8 +271,8 @@ class AgentOrchestrator:
             msg = Message(
                 id=str(uuid.uuid4()),
                 group_id=group_id,
-                sender_id="CARPI_AGENT",
-                sender_name="CARPI",
+                sender_id="CAPRI_AGENT",
+                sender_name="Capri",
                 message_type="text",
                 text=text,
                 direction="outgoing",
